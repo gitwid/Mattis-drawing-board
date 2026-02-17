@@ -1,0 +1,234 @@
+/* Minimalist CSS reset and base styles */
+:root {
+  --bg-color: #fdfaf6; /* Warm off-white, paper-like */
+  --ink-color: #2c2c2c; /* Soft black */
+  --accent-color: #e0e0e0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--ink-color);
+  overflow: hidden; /* Prevent scrolling, app-like feel */
+  touch-action: none; /* Prevent browser gestures interfering with drawing */
+}
+
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+h1 {
+  font-weight: 300;
+  opacity: 0.5;
+}
+
+.drawing-canvas-container {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-color);
+}
+
+.dream-camera-btn {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.dream-camera-btn:hover {
+  transform: translateX(-50%) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.dream-camera-btn:active {
+  transform: translateX(-50%) scale(0.95);
+}
+
+.mode-toggle {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 5px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  z-index: 100;
+}
+
+.mode-toggle button {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 15px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  color: #888;
+  transition: all 0.2s;
+}
+
+.mode-toggle button.active {
+  background: var(--ink-color);
+  color: white;
+}
+
+.stream-controls {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+.stream-controls button {
+  background: white;
+  border: 1px solid #e0e0e0;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  color: #555;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.clear-btn {
+  position: absolute;
+  top: 90px; /* Below the toggle */
+  right: 20px;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  color: #aaa;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s;
+  z-index: 100;
+}
+
+.clear-btn:hover {
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+  transform: rotate(90deg);
+}
+
+.dream-stream-empty {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #aaa;
+}
+
+.add-overlay-btn {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 50px;
+  padding: 15px 25px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  color: #555;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+}
+
+.add-overlay-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.color-palette {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 15px 10px;
+  border-radius: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  z-index: 100;
+}
+
+.color-pot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.color-pot:hover {
+  transform: scale(1.2);
+}
+
+.color-pot.selected {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 4px white, 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 1;
+}
+
+/* Swirl Animation */
+@keyframes swirlUp {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  50% {
+    transform: scale(0.5) rotate(180deg);
+    opacity: 0.8;
+    filter: blur(5px) hue-rotate(90deg);
+  }
+  100% {
+    transform: scale(0.1) rotate(720deg) translateY(-200vh);
+    opacity: 0;
+    filter: blur(20px) hue-rotate(180deg);
+  }
+}
+
+.swirling .drawing-canvas-container {
+  animation: swirlUp 1s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+  pointer-events: none; /* Prevent drawing during swirl */
+}
+
+/* Optional: Make the background glow/flash briefly */
+.swirling {
+    background-color: #fff9c4; /* Subtle flash of light/gold */
+    transition: background-color 1s ease;
+}
