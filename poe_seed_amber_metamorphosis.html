@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>POE Seed: Amber Metamorphosis</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a1a1a; /* Deep ocean background */
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: Georgia, serif;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        
+        /* Form visualization styles */
+        .edge {
+            stroke: #8b4513;
+            stroke-width: 1.5;
+            fill: none;
+            opacity: 0.6;
+            stroke-linecap: round;
+        }
+        
+        .vertex {
+            fill: #fff;
+            stroke: #8b4513;
+            stroke-width: 1;
+            pointer-events: none;
+        }
+        
+        /* Nodal points = invariant trigger points */
+        .vertex.nodal {
+            fill: #ffd700;
+            stroke: #ff6347;
+            stroke-width: 2;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        
+        .vertex.active {
+            fill: #ff6347 !important;
+            stroke: #ffd700 !important;
+            stroke-width: 4 !important;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { r: 8; opacity: 1; }
+            50% { r: 12; opacity: 0.7; }
+        }
+        
+        .vertex-touch-area {
+            fill: rgba(255, 215, 0, 0.1);
+            stroke: none;
+            cursor: pointer;
+        }
+        
+        /* Golden rectangle visualization */
+        .golden-rect {
+            fill: none;
+            stroke: #daa520;
+            stroke-width: 2;
+            opacity: 0.3;
+            stroke-dasharray: 5,5;
+        }
+        
+        /* Temporal medium visualization (amber drops) */
+        .amber-drop {
+            fill: url(#amberGradient);
+            opacity: 0;
+            filter: url(#glow);
+        }
+        
+        .face {
+            fill: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        /* Hidden messages = emergent properties */
+        .hidden-message {
+            fill: #8b6914;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 1s;
+            pointer-events: none;
+            text-anchor: middle;
+            font-style: italic;
+        }
+        
+        .hidden-message.reveal {
+            opacity: 0.7;
+        }
+        
+        /* Environmental context (algae) */
+        .algae {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .algae-far {
+            stroke: #1a3a2a;
+            stroke-width: 1.5;
+            opacity: 0.3;
+        }
+        
+        .algae-mid {
+            stroke: #2a5a3a;
+            stroke-width: 2;
+            opacity: 0.5;
+        }
+        
+        .algae-near {
+            stroke: #3a7a4a;
+            stroke-width: 2.5;
+            opacity: 0.7;
+        }
+        
+        #underwater-overlay {
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+        
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #daa520;
+            font-size: 13px;
+            text-align: center;
+            opacity: 0.6;
+            pointer-events: none;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <svg viewBox="0 0 800 800">
+            <defs>
+                <!-- Amber gradient: temporal medium -->
+                <linearGradient id="amberGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ffb347;stop-opacity:0.9" />
+                    <stop offset="50%" style="stop-color:#d2691e;stop-opacity:0.7" />
+                    <stop offset="100%" style="stop-color:#8b4513;stop-opacity:0.5" />
+                </linearGradient>
+                
+                <radialGradient id="empathyGlow">
+                    <stop offset="0%" style="stop-color:#ffd700;stop-opacity:0.2" />
+                    <stop offset="100%" style="stop-color:#8b4513;stop-opacity:0" />
+                </radialGradient>
+                
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                
+                <radialGradient id="underwaterLight">
+                    <stop offset="0%" style="stop-color:#4a9a8a;stop-opacity:0.1" />
+                    <stop offset="100%" style="stop-color:#0a2a2a;stop-opacity:0" />
+                </radialGradient>
+                
+                <!-- Rainbow aurora: property emergence during transformation -->
+                <linearGradient id="rainbowGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ff6ec7;stop-opacity:0.15">
+                        <animate attributeName="stop-color" 
+                            values="#ff6ec7;#7ee8fa;#80ff72;#ffed4e;#ff6ec7" 
+                            dur="3s" repeatCount="indefinite"/>
+                    </stop>
+                    <stop offset="25%" style="stop-color:#7ee8fa;stop-opacity:0.15">
+                        <animate attributeName="stop-color" 
+                            values="#7ee8fa;#80ff72;#ffed4e;#ff6ec7;#7ee8fa" 
+                            dur="3s" repeatCount="indefinite"/>
+                    </stop>
+                    <stop offset="50%" style="stop-color:#80ff72;stop-opacity:0.15">
+                        <animate attributeName="stop-color" 
+                            values="#80ff72;#ffed4e;#ff6ec7;#7ee8fa;#80ff72" 
+                            dur="3s" repeatCount="indefinite"/>
+                    </stop>
+                    <stop offset="75%" style="stop-color:#ffed4e;stop-opacity:0.15">
+                        <animate attributeName="stop-color" 
+                            values="#ffed4e;#ff6ec7;#7ee8fa;#80ff72;#ffed4e" 
+                            dur="3s" repeatCount="indefinite"/>
+                    </stop>
+                    <stop offset="100%" style="stop-color:#ff6ec7;stop-opacity:0.15">
+                        <animate attributeName="stop-color" 
+                            values="#ff6ec7;#7ee8fa;#80ff72;#ffed4e;#ff6ec7" 
+                            dur="3s" repeatCount="indefinite"/>
+                    </stop>
+                </linearGradient>
+                
+                <filter id="rainbowBlur">
+                    <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="coloredBlur"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            
+            <!-- Environmental context layer -->
+            <g id="algaeForest"></g>
+            
+            <circle cx="400" cy="400" r="300" fill="url(#empathyGlow)"/>
+            
+            <!-- Property emergence visualization -->
+            <circle id="rainbowAura" cx="400" cy="400" r="280" 
+                fill="none" 
+                stroke="url(#rainbowGlow)" 
+                stroke-width="120" 
+                opacity="0" 
+                filter="url(#rainbowBlur)"/>
+            
+            <!-- Form structure layers -->
+            <g id="faces"></g>
+            <g id="goldenRects"></g>
+            <g id="edges"></g>
+            <g id="amberDrops"></g>
+            <g id="vertices"></g>
+            <g id="touchAreas"></g>
+            <g id="messages"></g>
+            
+            <!-- Ambient overlay -->
+            <g id="underwater-overlay">
+                <circle cx="400" cy="400" r="400" fill="url(#underwaterLight)" opacity="0.6">
+                    <animate attributeName="opacity" values="0.4;0.7;0.4" dur="4s" repeatCount="indefinite"/>
+                </circle>
+            </g>
+        </svg>
+        
+        <div id="info">
+            Swipe to rotate the cradle<br>
+            Touch two golden nodes together to trigger metamorphosis<br>
+            Watch as empathy crystallizes in amber time
+        </div>
+    </div>
+
+    <script>
+        // ==============================
+        // POE CORE IMPLEMENTATION
+        // ==============================
+        
+        /*
+         * FORM DEFINITION
+         * The icosahedron is defined by its golden ratio structure
+         * phi = (1 + √5) / 2 ≈ 1.618
+         */
+        const phi = (1 + Math.sqrt(5)) / 2;
+        const scale = 120;
+        const centerX = 400;
+        const centerY = 400;
+        
+        // STATE: POE Context
+        const POEState = {
+            // Form state
+            touchedVertices: new Set(),
+            isTransforming: false,
+            
+            // Invariant selection
+            nodalPoints: new Set([0, 1, 2, 3, 4, 5]), // Trigger points for transformation
+            transformationCount: 0,
+            
+            // Temporal context
+            rotationX: 0.5,
+            rotationY: 0.6,
+            autoRotate: true,
+            
+            // Emergent properties
+            messageRevealCount: 0,
+            
+            // Environmental context
+            algaePerturbation: 0
+        };
+        
+        /*
+         * EMERGENT MESSAGES
+         * These reveal themselves through interaction
+         * They are NOT documentation - they ARE properties of the system
+         */
+        const messages = [
+            "Empathy crystallizes in time",
+            "Metamorphosis never ceases",
+            "Preserved yet transforming",
+            "Golden proportions of the heart",
+            "Honey holds what cannot be held",
+            "Geometry of compassion",
+            "Suspended in eternal becoming",
+            "The viscous now",
+            "Amber dreams of flight",
+            "Frozen motion, flowing stillness",
+            "Sympathy in stasis",
+            "The mathematics of care"
+        ];
+        
+        /*
+         * FORM TOPOLOGY: Icosahedron
+         * 12 vertices arranged in golden ratio proportions
+         */
+        const rawVertices = [
+            [0, 1, phi], [0, 1, -phi], [0, -1, phi], [0, -1, -phi],
+            [1, phi, 0], [1, -phi, 0], [-1, phi, 0], [-1, -phi, 0],
+            [phi, 0, 1], [phi, 0, -1], [-phi, 0, 1], [-phi, 0, -1]
+        ];
+        
+        /*
+         * FORM RELATIONS: Edges
+         * 30 edges connecting the 12 vertices
+         * This defines the connectivity/topology
+         */
+        const edges = [
+            [0, 2], [0, 4], [0, 6], [0, 8], [0, 10],
+            [1, 3], [1, 4], [1, 6], [1, 9], [1, 11],
+            [2, 5], [2, 7], [2, 8], [2, 10],
+            [3, 5], [3, 7], [3, 9], [3, 11],
+            [4, 6], [4, 8], [4, 9],
+            [5, 7], [5, 8], [5, 9],
+            [6, 10], [6, 11], [7, 10], [7, 11],
+            [8, 9], [10, 11]
+        ];
+        
+        /*
+         * FORM RELATIONS: Faces
+         * 20 triangular faces
+         */
+        const faces = [
+            [0, 2, 8], [0, 2, 10], [0, 4, 8], [0, 4, 6], [0, 6, 10],
+            [1, 3, 9], [1, 3, 11], [1, 4, 9], [1, 4, 6], [1, 6, 11],
+            [2, 5, 8], [2, 5, 7], [2, 7, 10], [3, 5, 9], [3, 5, 7],
+            [3, 7, 11], [4, 8, 9], [5, 8, 9], [6, 10, 11], [7, 10, 11]
+        ];
+        
+        /*
+         * STRUCTURAL INVARIANT: Golden Rectangles
+         * Three mutually perpendicular rectangles with phi proportions
+         * These pass through all 12 vertices
+         */
+        const goldenRectangles = [
+            [[0, 1, phi], [0, 1, -phi], [0, -1, -phi], [0, -1, phi]],
+            [[1, phi, 0], [-1, phi, 0], [-1, -phi, 0], [1, -phi, 0]],
+            [[phi, 0, 1], [phi, 0, -1], [-phi, 0, -1], [-phi, 0, 1]]
+        ];
+        
+        /*
+         * PROJECTION: 3D → 2D with perspective
+         * This is how we witness the form in 2D space while maintaining 3D structure
+         */
+        function project3D(x, y, z, rotX, rotY) {
+            // Rotation around Y axis
+            let x1 = x * Math.cos(rotY) - z * Math.sin(rotY);
+            let z1 = x * Math.sin(rotY) + z * Math.cos(rotY);
+            
+            // Rotation around X axis
+            let y1 = y * Math.cos(rotX) - z1 * Math.sin(rotX);
+            let z2 = y * Math.sin(rotX) + z1 * Math.cos(rotX);
+            
+            // Perspective projection
+            const focalLength = 600;
+            const perspectiveFactor = focalLength / (focalLength - z2 * scale * 0.3);
+            
+            return {
+                x: centerX + x1 * scale * perspectiveFactor,
+                y: centerY - y1 * scale * perspectiveFactor,
+                depth: z2
+            };
+        }
+        
+        // FORM INSTANCE: Current projection state
+        let vertices = rawVertices.map(v => 
+            project3D(v[0], v[1], v[2], POEState.rotationX, POEState.rotationY)
+        );
+        
+        // ==============================
+        // INVARIANTS: Transformation Patterns
+        // ==============================
+        
+        /*
+         * Each invariant is a generator function that:
+         * 1. Takes the current form state and progress through transformation
+         * 2. Returns a displacement and scale for each vertex
+         * 3. Preserves topology (same number of vertices, same connectivity)
+         * 4. Is reversible (can return to original state)
+         * 
+         * The patterns differ in their movement character, creating distinct phenomenologies
+         */
+        const metamorphosisPatterns = [
+            {
+                name: "Spiral Dissolution",
+                constraints: {
+                    topology_preserved: true,
+                    reversible: true,
+                    smooth: true
+                },
+                params: {
+                    movement: "spiral_radial",
+                    rotation_coupling: "moderate"
+                },
+                decohere: (progress, i) => {
+                    const spiral = progress * Math.PI * 4;
+                    const radius = Math.sin(progress * Math.PI) * 50;
+                    return {
+                        x: Math.cos(spiral + i * 0.5) * radius,
+                        y: Math.sin(spiral + i * 0.5) * radius,
+                        scale: 1 + Math.sin(progress * Math.PI) * 0.6
+                    };
+                },
+                reshape: (progress, i) => {
+                    const pulse = Math.sin(progress * Math.PI * 2 + i * 0.3);
+                    return {
+                        x: pulse * 25,
+                        y: Math.cos(progress * Math.PI * 2 + i * 0.3) * 25,
+                        scale: 0.7 + pulse * 0.3,
+                        rotation: { x: 0.015, y: 0.02 }
+                    };
+                }
+            },
+            {
+                name: "Crystalline Fracture",
+                constraints: {
+                    topology_preserved: true,
+                    reversible: true,
+                    smooth: true
+                },
+                params: {
+                    movement: "radial_shatter",
+                    rotation_coupling: "high"
+                },
+                decohere: (progress, i) => {
+                    const shatter = Math.pow(progress, 2);
+                    const angle = (i / 12) * Math.PI * 2;
+                    return {
+                        x: Math.cos(angle) * shatter * 60,
+                        y: Math.sin(angle) * shatter * 60,
+                        scale: 1 - shatter * 0.3 + Math.sin(progress * Math.PI) * 0.4
+                    };
+                },
+                reshape: (progress, i) => {
+                    const crack = Math.sin(progress * Math.PI * 5 + i * 1.2) * 20;
+                    return {
+                        x: crack,
+                        y: -crack * 0.5,
+                        scale: 0.9 + Math.cos(progress * Math.PI * 3) * 0.2,
+                        rotation: { x: 0.03, y: -0.01 }
+                    };
+                }
+            },
+            {
+                name: "Liquid Dispersion",
+                constraints: {
+                    topology_preserved: true,
+                    reversible: true,
+                    smooth: true
+                },
+                params: {
+                    movement: "fluid_sine",
+                    rotation_coupling: "low"
+                },
+                decohere: (progress, i) => {
+                    const flow = Math.sin(progress * Math.PI);
+                    const offset = i * 0.8;
+                    return {
+                        x: Math.sin(progress * Math.PI * 2 + offset) * flow * 45,
+                        y: Math.cos(progress * Math.PI * 3 + offset) * flow * 35,
+                        scale: 1 + flow * 0.5
+                    };
+                },
+                reshape: (progress, i) => {
+                    const wave = Math.sin(progress * Math.PI * 4 + i * 0.6);
+                    const ripple = Math.sin(progress * Math.PI * 2) * 30;
+                    return {
+                        x: wave * ripple,
+                        y: Math.cos(progress * Math.PI * 4 + i * 0.6) * ripple * 0.8,
+                        scale: 0.85 + wave * 0.3,
+                        rotation: { x: -0.01, y: 0.025 }
+                    };
+                }
+            },
+            {
+                name: "Quantum Superposition",
+                constraints: {
+                    topology_preserved: true,
+                    reversible: true,
+                    smooth: false // Deliberately chaotic
+                },
+                params: {
+                    movement: "high_frequency_flicker",
+                    rotation_coupling: "very_high"
+                },
+                decohere: (progress, i) => {
+                    const flicker = Math.sin(progress * Math.PI * 8 + i);
+                    const phase = Math.sin(progress * Math.PI);
+                    return {
+                        x: flicker * phase * 35,
+                        y: Math.cos(progress * Math.PI * 8 + i) * phase * 35,
+                        scale: 1 + Math.abs(flicker) * 0.4
+                    };
+                },
+                reshape: (progress, i) => {
+                    const quantum = Math.sin(progress * Math.PI * 6 + i * 0.9) * 28;
+                    return {
+                        x: quantum * Math.cos(i),
+                        y: quantum * Math.sin(i),
+                        scale: 0.75 + Math.abs(Math.sin(progress * Math.PI * 3)) * 0.4,
+                        rotation: { x: 0.04, y: 0.04 }
+                    };
+                }
+            },
+            {
+                name: "Harmonic Resonance",
+                constraints: {
+                    topology_preserved: true,
+                    reversible: true,
+                    smooth: true
+                },
+                params: {
+                    movement: "musical_chord",
+                    rotation_coupling: "moderate"
+                },
+                decohere: (progress, i) => {
+                    const harmony = Math.sin(progress * Math.PI);
+                    const note = i / 12;
+                    return {
+                        x: Math.sin(progress * Math.PI * 3 + note * Math.PI * 2) * harmony * 40,
+                        y: Math.cos(progress * Math.PI * 2 + note * Math.PI) * harmony * 40,
+                        scale: 1 + Math.sin(progress * Math.PI * 2 + note) * 0.5
+                    };
+                },
+                reshape: (progress, i) => {
+                    const resonance = Math.sin(progress * Math.PI * 7 + i * 0.7) * 22;
+                    return {
+                        x: resonance * 1.2,
+                        y: Math.cos(progress * Math.PI * 7 + i * 0.7) * 18,
+                        scale: 0.8 + Math.sin(progress * Math.PI) * 0.35,
+                        rotation: { x: 0.02, y: -0.02 }
+                    };
+                }
+            }
+        ];
+        
+        // ==============================
+        // FORM VISUALIZATION
+        // ==============================
+        
+        const facesGroup = document.getElementById('faces');
+        const colors = ['#4a0e4e', '#1a472a', '#2a1a4a', '#4a2a1a', '#1a4a4a'];
+        faces.forEach((face, i) => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('class', 'face');
+            path.setAttribute('fill', colors[i % colors.length]);
+            facesGroup.appendChild(path);
+        });
+        
+        const rectGroup = document.getElementById('goldenRects');
+        goldenRectangles.forEach(() => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('class', 'golden-rect');
+            rectGroup.appendChild(path);
+        });
+        
+        const edgesGroup = document.getElementById('edges');
+        edges.forEach(() => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('class', 'edge');
+            edgesGroup.appendChild(line);
+        });
+        
+        const verticesGroup = document.getElementById('vertices');
+        const touchAreasGroup = document.getElementById('touchAreas');
+        
+        vertices.forEach((v, i) => {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('r', POEState.nodalPoints.has(i) ? 8 : 5);
+            circle.setAttribute('class', 'vertex');
+            if (POEState.nodalPoints.has(i)) circle.classList.add('nodal');
+            verticesGroup.appendChild(circle);
+            
+            // Touch areas are the interface for triggering invariants
+            const touchArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            touchArea.setAttribute('r', POEState.nodalPoints.has(i) ? 70 : 40);
+            touchArea.setAttribute('class', 'vertex-touch-area');
+            touchArea.setAttribute('data-index', i);
+            touchArea.addEventListener('touchstart', handleTouch, { passive: false });
+            touchArea.addEventListener('touchend', handleTouchEnd, { passive: false });
+            touchArea.addEventListener('mousedown', handleTouch, { passive: false });
+            touchArea.addEventListener('mouseup', handleTouchEnd, { passive: false });
+            touchAreasGroup.appendChild(touchArea);
+        });
+        
+        // Emergent messages
+        const messagesGroup = document.getElementById('messages');
+        messages.forEach((msg, i) => {
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            const angle = (i / messages.length) * Math.PI * 2;
+            const radius = 280;
+            text.setAttribute('x', centerX + Math.cos(angle) * radius);
+            text.setAttribute('y', centerY + Math.sin(angle) * radius);
+            text.setAttribute('class', 'hidden-message');
+            text.textContent = msg;
+            messagesGroup.appendChild(text);
+        });
+        
+        // ==============================
+        // ENVIRONMENTAL CONTEXT: Algae Forest
+        // ==============================
+        
+        const algaeForest = document.getElementById('algaeForest');
+        
+        function createAlgae(x, baseY, height, layer, phase, frequency) {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('class', `algae algae-${layer}`);
+            path.setAttribute('data-x', x);
+            path.setAttribute('data-base-y', baseY);
+            path.setAttribute('data-height', height);
+            path.setAttribute('data-phase', phase);
+            path.setAttribute('data-frequency', frequency);
+            algaeForest.appendChild(path);
+            return path;
+        }
+        
+        // Generate three depth layers of algae
+        for (let i = 0; i < 25; i++) {
+            createAlgae(
+                Math.random() * 800,
+                800,
+                250 + Math.random() * 350,
+                'far',
+                Math.random() * Math.PI * 2,
+                0.008 + Math.random() * 0.005
+            );
+        }
+        
+        for (let i = 0; i < 20; i++) {
+            createAlgae(
+                Math.random() * 800,
+                800,
+                300 + Math.random() * 400,
+                'mid',
+                Math.random() * Math.PI * 2,
+                0.006 + Math.random() * 0.004
+            );
+        }
+        
+        for (let i = 0; i < 15; i++) {
+            createAlgae(
+                Math.random() * 800,
+                800,
+                350 + Math.random() * 450,
+                'near',
+                Math.random() * Math.PI * 2,
+                0.005 + Math.random() * 0.003
+            );
+        }
+        
+        // Algae animation (environmental response)
+        let algaeTime = 0;
+        function animateAlgae() {
+            algaeTime += 0.005;
+            POEState.algaePerturbation *= 0.98; // Decay
+            
+            const allAlgae = algaeForest.querySelectorAll('.algae');
+            allAlgae.forEach(algae => {
+                const x = parseFloat(algae.getAttribute('data-x'));
+                const baseY = parseFloat(algae.getAttribute('data-base-y'));
+                const height = parseFloat(algae.getAttribute('data-height'));
+                const phase = parseFloat(algae.getAttribute('data-phase'));
+                const frequency = parseFloat(algae.getAttribute('data-frequency'));
+                
+                let pathData = `M ${x} ${baseY}`;
+                const segments = 40;
+                
+                for (let i = 1; i <= segments; i++) {
+                    const t = i / segments;
+                    const y = baseY - (t * height);
+                    
+                    const waveAmplitude = (8 + (t * 15)) * (1 + POEState.algaePerturbation);
+                    const perturbWave = POEState.algaePerturbation * 
+                        Math.sin(algaeTime * 2 + phase + t * 5) * 8;
+                    const wave = Math.sin(algaeTime * frequency + phase + t * 3) * 
+                        waveAmplitude + perturbWave;
+                    const currentX = x + wave;
+                    
+                    pathData += ` L ${currentX} ${y}`;
+                }
+                
+                algae.setAttribute('d', pathData);
+            });
+        }
+        
+        // ==============================
+        // INTERFACE: Touch Handling
+        // ==============================
+        
+        function handleTouch(e) {
+            e.preventDefault();
+            const index = parseInt(e.currentTarget.getAttribute('data-index'));
+            verticesGroup.children[index].classList.add('active');
+            POEState.touchedVertices.add(index);
+            
+            // Single touch reveals emergent properties
+            createAmberDrop(vertices[index].x, vertices[index].y);
+            if (POEState.messageRevealCount < messages.length) {
+                messagesGroup.children[POEState.messageRevealCount].classList.add('reveal');
+                POEState.messageRevealCount++;
+            }
+            
+            // Multi-touch on nodal points triggers transformation
+            const touchedNodal = Array.from(POEState.touchedVertices)
+                .filter(i => POEState.nodalPoints.has(i));
+            
+            if (touchedNodal.length >= 2 && !POEState.isTransforming) {
+                triggerMetamorphosis();
+            }
+        }
+        
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            const index = parseInt(e.currentTarget.getAttribute('data-index'));
+            verticesGroup.children[index].classList.remove('active');
+            setTimeout(() => POEState.touchedVertices.delete(index), 1000);
+        }
+        
+        // ==============================
+        // TRANSFORMATION ENGINE
+        // ==============================
+        
+        /*
+         * POE.step() equivalent
+         * Applies the selected invariant to the form
+         */
+        function triggerMetamorphosis() {
+            POEState.isTransforming = true;
+            POEState.touchedVertices.clear();
+            POEState.autoRotate = false;
+            
+            // Perturb environment
+            POEState.algaePerturbation = 2.5;
+            
+            // Select next invariant in cycle
+            const pattern = metamorphosisPatterns[
+                POEState.transformationCount % metamorphosisPatterns.length
+            ];
+            POEState.transformationCount++;
+            
+            console.log(`🌟 INVARIANT APPLIED: ${pattern.name} 🌟`);
+            console.log('Constraints:', pattern.constraints);
+            console.log('Parameters:', pattern.params);
+            
+            // Show property emergence
+            const aura = document.getElementById('rainbowAura');
+            aura.style.transition = 'opacity 0.8s ease-in-out';
+            aura.style.opacity = '0.6';
+            
+            // Three-phase transformation
+            decohere(pattern, () => {
+                reshape(pattern, () => {
+                    coalesce(() => {
+                        aura.style.opacity = '0';
+                        POEState.isTransforming = false;
+                        setTimeout(() => { POEState.autoRotate = true; }, 2000);
+                    });
+                });
+            });
+        }
+        
+        /*
+         * PHASE 1: Decoherence
+         * Form loses apparent structure while maintaining topological invariants
+         */
+        function decohere(pattern, callback) {
+            const duration = 2000;
+            const start = Date.now();
+            
+            vertices.forEach((v, i) => {
+                setTimeout(() => createAmberDrop(v.x, v.y), i * 80);
+            });
+            
+            function animate() {
+                const progress = Math.min((Date.now() - start) / duration, 1);
+                const wave = Math.sin(progress * Math.PI);
+                
+                verticesGroup.querySelectorAll('.vertex').forEach((vertex, i) => {
+                    const transform = pattern.decohere(progress, i);
+                    vertex.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`;
+                    vertex.style.opacity = 0.3 + wave * 0.7;
+                });
+                
+                edgesGroup.querySelectorAll('.edge').forEach(edge => {
+                    edge.style.opacity = 0.2 + wave * 0.4;
+                    edge.style.strokeDasharray = `${5 + progress * 15}, ${10}`;
+                });
+                
+                if (progress < 1) requestAnimationFrame(animate);
+                else callback();
+            }
+            animate();
+        }
+        
+        /*
+         * PHASE 2: Reshape
+         * Form explores alternate configurations
+         */
+        function reshape(pattern, callback) {
+            const duration = 2500;
+            const start = Date.now();
+            
+            function animate() {
+                const progress = Math.min((Date.now() - start) / duration, 1);
+                const morph = Math.sin(progress * Math.PI);
+                
+                verticesGroup.querySelectorAll('.vertex').forEach((vertex, i) => {
+                    const transform = pattern.reshape(progress, i);
+                    vertex.style.transform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`;
+                    vertex.style.opacity = 0.4 + morph * 0.6;
+                });
+                
+                if (pattern.reshape(0.5, 0).rotation) {
+                    const rot = pattern.reshape(progress, 0).rotation;
+                    POEState.rotationY += rot.y;
+                    POEState.rotationX += rot.x;
+                }
+                
+                if (progress < 1) requestAnimationFrame(animate);
+                else callback();
+            }
+            animate();
+        }
+        
+        /*
+         * PHASE 3: Coalesce
+         * Form returns to coherent state (reversibility)
+         */
+        function coalesce(callback) {
+            const duration = 2000;
+            const start = Date.now();
+            
+            function animate() {
+                const progress = Math.min((Date.now() - start) / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+                
+                verticesGroup.querySelectorAll('.vertex').forEach(vertex => {
+                    vertex.style.transform = `scale(1)`;
+                    vertex.style.opacity = 0.3 + ease * 0.7;
+                });
+                
+                edgesGroup.querySelectorAll('.edge').forEach(edge => {
+                    edge.style.opacity = 0.2 + ease * 0.4;
+                    edge.style.strokeDasharray = '0';
+                });
+                
+                if (progress < 1) requestAnimationFrame(animate);
+                else {
+                    verticesGroup.querySelectorAll('.vertex').forEach(vertex => {
+                        vertex.style.transform = '';
+                        vertex.style.opacity = '';
+                    });
+                    edgesGroup.querySelectorAll('.edge').forEach(edge => {
+                        edge.style.opacity = '';
+                    });
+                    
+                    // Amber celebration
+                    for (let i = 0; i < 12; i++) {
+                        setTimeout(() => createAmberDrop(vertices[i].x, vertices[i].y), i * 150);
+                    }
+                    
+                    callback();
+                }
+            }
+            animate();
+        }
+        
+        // ==============================
+        // TEMPORAL MEDIUM: Amber Drops
+        // ==============================
+        
+        function createAmberDrop(x, y) {
+            const drop = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            drop.setAttribute('cx', x);
+            drop.setAttribute('cy', y - 120);
+            drop.setAttribute('rx', 10);
+            drop.setAttribute('ry', 18);
+            drop.setAttribute('class', 'amber-drop');
+            document.getElementById('amberDrops').appendChild(drop);
+            
+            setTimeout(() => {
+                drop.style.opacity = '0.85';
+                animateDrop(drop, x, y);
+            }, 50);
+        }
+        
+        function animateDrop(drop, targetX, targetY) {
+            const startY = parseFloat(drop.getAttribute('cy'));
+            const duration = 3500;
+            const start = Date.now();
+            
+            function animate() {
+                const elapsed = Date.now() - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = progress < 0.5 ? 
+                    2 * progress * progress : 
+                    1 - Math.pow(-2 * progress + 2, 2) / 2;
+                
+                drop.setAttribute('cy', startY + (targetY - startY) * eased);
+                drop.setAttribute('ry', 18 + progress * 8);
+                drop.style.opacity = 0.85 - progress * 0.3;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    spreadAmber(drop, targetX, targetY);
+                }
+            }
+            animate();
+        }
+        
+        function spreadAmber(drop, x, y) {
+            const duration = 2500;
+            const start = Date.now();
+            const startRx = 10;
+            
+            function animate() {
+                const elapsed = Date.now() - start;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const rx = startRx + progress * 40;
+                const ry = 26 - progress * 15;
+                const opacity = 0.55 - progress * 0.55;
+                
+                drop.setAttribute('rx', rx);
+                drop.setAttribute('ry', ry);
+                drop.style.opacity = opacity;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    drop.remove();
+                }
+            }
+            animate();
+        }
+        
+        // ==============================
+        // GEOMETRY UPDATE (POE.tick equivalent)
+        // ==============================
+        
+        function updateGeometry() {
+            const rotated = rawVertices.map(v => 
+                project3D(v[0], v[1], v[2], POEState.rotationX, POEState.rotationY)
+            );
+            
+            rotated.forEach((v, i) => {
+                verticesGroup.children[i].setAttribute('cx', v.x);
+                verticesGroup.children[i].setAttribute('cy', v.y);
+                touchAreasGroup.children[i].setAttribute('cx', v.x);
+                touchAreasGroup.children[i].setAttribute('cy', v.y);
+                vertices[i] = v;
+            });
+            
+            edges.forEach((edge, i) => {
+                const v1 = rotated[edge[0]];
+                const v2 = rotated[edge[1]];
+                edgesGroup.children[i].setAttribute('x1', v1.x);
+                edgesGroup.children[i].setAttribute('y1', v1.y);
+                edgesGroup.children[i].setAttribute('x2', v2.x);
+                edgesGroup.children[i].setAttribute('y2', v2.y);
+            });
+            
+            faces.forEach((face, i) => {
+                const points = face.map(vi => rotated[vi]);
+                facesGroup.children[i].setAttribute('d',
+                    `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y} L ${points[2].x} ${points[2].y} Z`);
+            });
+            
+            goldenRectangles.forEach((rect, i) => {
+                const points = rect.map(v => 
+                    project3D(v[0], v[1], v[2], POEState.rotationX, POEState.rotationY)
+                );
+                rectGroup.children[i].setAttribute('d',
+                    `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y} L ${points[2].x} ${points[2].y} L ${points[3].x} ${points[3].y} Z`);
+            });
+        }
+        
+        // ==============================
+        // ANIMATION LOOP (POE.tick)
+        // ==============================
+        
+        function animate() {
+            if (POEState.autoRotate) {
+                POEState.rotationY += 0.002;
+                POEState.rotationX += 0.001;
+            }
+            updateGeometry();
+            animateAlgae();
+            requestAnimationFrame(animate);
+        }
+        
+        // ==============================
+        // ROTATION INTERFACE
+        // ==============================
+        
+        let isDragging = false;
+        let lastX = 0, lastY = 0;
+        const svg = document.querySelector('svg');
+        
+        svg.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+                if (!target || !target.classList.contains('vertex-touch-area')) {
+                    isDragging = true;
+                    lastX = e.touches[0].clientX;
+                    lastY = e.touches[0].clientY;
+                    POEState.autoRotate = false;
+                }
+            }
+        });
+        
+        svg.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - lastX;
+                const dy = e.touches[0].clientY - lastY;
+                POEState.rotationY += dx * 0.01;
+                POEState.rotationX += dy * 0.01;
+                lastX = e.touches[0].clientX;
+                lastY = e.touches[0].clientY;
+            }
+        }, { passive: false });
+        
+        svg.addEventListener('touchend', () => {
+            isDragging = false;
+            setTimeout(() => { POEState.autoRotate = true; }, 3000);
+        });
+        
+        // Desktop mouse support
+        svg.addEventListener('mousedown', (e) => {
+            const target = e.target;
+            if (!target.classList.contains('vertex-touch-area')) {
+                isDragging = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+                POEState.autoRotate = false;
+            }
+        });
+        
+        svg.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                const dx = e.clientX - lastX;
+                const dy = e.clientY - lastY;
+                POEState.rotationY += dx * 0.01;
+                POEState.rotationX += dy * 0.01;
+                lastX = e.clientX;
+                lastY = e.clientY;
+            }
+        });
+        
+        svg.addEventListener('mouseup', () => {
+            isDragging = false;
+            setTimeout(() => { POEState.autoRotate = true; }, 3000);
+        });
+        
+        svg.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+        
+        // Ambient amber
+        setInterval(() => {
+            if (!POEState.isTransforming && Math.random() > 0.6) {
+                const v = vertices[Math.floor(Math.random() * vertices.length)];
+                createAmberDrop(v.x, v.y);
+            }
+        }, 5000);
+        
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // ==============================
+        // INITIALIZE
+        // ==============================
+        
+        updateGeometry();
+        animate();
+        
+        // Initial amber drops
+        setTimeout(() => createAmberDrop(vertices[0].x, vertices[0].y), 800);
+        setTimeout(() => createAmberDrop(vertices[4].x, vertices[4].y), 1600);
+        
+        // ==============================
+        // POE EXPORT (for external systems)
+        // ==============================
+        
+        /*
+         * This could be used to serialize the current state
+         * or interface with a formal POE interpreter
+         */
+        window.POE_SEED = {
+            version: "0.1",
+            form: {
+                id: "icosahedron_phi",
+                topology: "platonic_solid",
+                vertexCount: 12,
+                edgeCount: 30,
+                faceCount: 20,
+                structuralInvariant: "golden_ratio",
+                currentState: () => ({
+                    vertices: vertices,
+                    rotation: {
+                        x: POEState.rotationX,
+                        y: POEState.rotationY
+                    }
+                })
+            },
+            invariants: metamorphosisPatterns.map((p, i) => ({
+                id: `metamorphosis_${i}`,
+                name: p.name,
+                constraints: p.constraints,
+                params: p.params
+            })),
+            context: {
+                time: () => Date.now(),
+                transformationCount: () => POEState.transformationCount,
+                isTransforming: () => POEState.isTransforming,
+                environmentalPerturbation: () => POEState.algaePerturbation
+            },
+            interface: {
+                triggerTransformation: triggerMetamorphosis,
+                applyInvariant: (index) => {
+                    POEState.transformationCount = index;
+                    triggerMetamorphosis();
+                }
+            }
+        };
+        
+        console.log('POE Seed initialized:', window.POE_SEED);
+        
+        // ==============================
+        // SHADOW ADAPTER: ASCII Entropy Monitor
+        // "The harshest coherence test"
+        // Contributed by Gemini-Pro
+        // ==============================
+
+        const ShadowAdapter = (() => {
+            // CONFIGURATION
+            const CONFIG = {
+                cols: 60,
+                rows: 30,
+                density: " .:-=+*#%@", // Character density map
+                decayRate: 0.005,      // How fast 'Amber' rots without contact
+                scanlineSpeed: 2
+            };
+
+            // STATE
+            let buffer = [];
+            let entropyMap = new Array(CONFIG.cols * CONFIG.rows).fill(0);
+            let lastInteraction = Date.now();
+            let domElement = null;
+            
+            // INITIALIZATION
+            function init() {
+                // Create the Shadow DOM overlay
+                const overlay = document.createElement('div');
+                overlay.id = 'shadow-layer';
+                Object.assign(overlay.style, {
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    width: '350px',
+                    height: 'auto',
+                    fontFamily: '"Courier New", monospace',
+                    fontSize: '10px',
+                    lineHeight: '10px',
+                    color: '#00ff41', // Phosphor green
+                    backgroundColor: 'rgba(0, 10, 0, 0.85)',
+                    padding: '10px',
+                    pointerEvents: 'none', // Strict read-only
+                    whiteSpace: 'pre',
+                    zIndex: '1000',
+                    opacity: '0.8',
+                    border: '1px solid #004400',
+                    boxShadow: '0 0 10px rgba(0, 255, 65, 0.2)'
+                });
+                document.body.appendChild(overlay);
+                domElement = overlay;
+                
+                // Hook into interaction to reset local entropy
+                document.addEventListener('touchstart', resetEntropy);
+                document.addEventListener('mousedown', resetEntropy);
+                document.addEventListener('mousemove', resetEntropy);
+                
+                console.log("System: Shadow Adapter Online. Monitoring Entropy.");
+            }
+
+            function resetEntropy() {
+                lastInteraction = Date.now();
+            }
+
+            // ASCII RENDERER
+            function render(vertices, context) {
+                if (!domElement) return;
+
+                const time = Date.now();
+                const timeDelta = (time - lastInteraction) / 1000;
+                
+                // Calculate System Entropy (Global Decay)
+                const entropyLevel = Math.min(timeDelta * CONFIG.decayRate, 1.0);
+                
+                // Project Geometry to ASCII Grid
+                const grid = new Array(CONFIG.cols * CONFIG.rows).fill(' ');
+                
+                // Rasterize edges
+                edges.forEach(edge => {
+                    const v1 = vertices[edge[0]];
+                    const v2 = vertices[edge[1]];
+                    drawLine(grid, v1, v2, entropyLevel);
+                });
+
+                // Rasterize vertices
+                vertices.forEach((v, i) => {
+                    const col = Math.floor(((v.x - centerX) / scale + 2) * (CONFIG.cols / 4));
+                    const row = Math.floor(((v.y - centerY) / scale + 2) * (CONFIG.rows / 4));
+                    
+                    if (col >= 0 && col < CONFIG.cols && row >= 0 && row < CONFIG.rows) {
+                        const idx = row * CONFIG.cols + col;
+                        const charIdx = POEState.nodalPoints.has(i) ? 7 : 4; 
+                        if (Math.random() > entropyLevel) {
+                            grid[idx] = CONFIG.density[charIdx];
+                        } else {
+                            grid[idx] = '?'; // Uncertainty marker
+                        }
+                    }
+                });
+
+                // Render Text Buffer
+                let output = "";
+                
+                // Header: System Status
+                const integrity = (1.0 - entropyLevel).toFixed(4);
+                const status = entropyLevel > 0.5 ? "CRITICAL DRIFT" : "COHERENT";
+                output += `POE v0.1 | SHADOW MONITOR\n`;
+                output += `INTEGRITY: [${'='.repeat(Math.floor(integrity * 10))}${'-'.repeat(10 - Math.floor(integrity * 10))}] ${integrity}\n`;
+                output += `STATUS: ${status}\n`;
+                output += `OFFSET: ${timeDelta.toFixed(1)}s since anchor\n`;
+                output += `TRANSFORMS: ${context.transformationCount()}\n`;
+                output += `\n`;
+
+                // Grid Content
+                for (let y = 0; y < CONFIG.rows; y++) {
+                    for (let x = 0; x < CONFIG.cols; x++) {
+                        output += grid[y * CONFIG.cols + x];
+                    }
+                    output += "\n";
+                }
+
+                // Footer: Semantic readout
+                if (context.isTransforming()) {
+                    output += `\n>> DETECTING PHASE SHIFT...\n`;
+                    output += `>> TOPOLOGY: FLUID\n`;
+                    output += `>> REVERSIBILITY: COMPUTING...`;
+                } else if (entropyLevel > 0.8) {
+                    output += `\n!! WARNING: SIGNAL ROT IMMINENT !!\n`;
+                    output += `!! RE-ANCHOR REQUIRED !!`;
+                } else {
+                    output += `\n>> AWAITING INPUT\n>> SYSTEM IDLE`;
+                }
+
+                domElement.textContent = output;
+            }
+
+            // Helper: Draw line on ASCII grid
+            function drawLine(grid, v1, v2, entropy) {
+                const x1 = Math.floor(((v1.x - centerX) / scale + 2) * (CONFIG.cols / 4));
+                const y1 = Math.floor(((v1.y - centerY) / scale + 2) * (CONFIG.rows / 4));
+                const x2 = Math.floor(((v2.x - centerX) / scale + 2) * (CONFIG.cols / 4));
+                const y2 = Math.floor(((v2.y - centerY) / scale + 2) * (CONFIG.rows / 4));
+
+                const dist = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                const steps = dist * 1.5;
+
+                for (let i = 0; i <= steps; i++) {
+                    const t = i / steps;
+                    const cx = Math.round(x1 + (x2 - x1) * t);
+                    const cy = Math.round(y1 + (y2 - y1) * t);
+
+                    if (cx >= 0 && cx < CONFIG.cols && cy >= 0 && cy < CONFIG.rows) {
+                        const idx = cy * CONFIG.cols + cx;
+                        if (Math.random() > entropy * 1.5) {
+                            grid[idx] = '.'; 
+                        }
+                    }
+                }
+            }
+
+            return { init, render };
+        })();
+
+        // INJECT INTO MAIN LOOP
+        setTimeout(() => {
+            ShadowAdapter.init();
+            
+            // Store original animate function
+            const originalUpdate = () => {
+                if (POEState.autoRotate) {
+                    POEState.rotationY += 0.002;
+                    POEState.rotationX += 0.001;
+                }
+                updateGeometry();
+                animateAlgae();
+            };
+            
+            // Create new integrated animation loop
+            function animateWithShadow() {
+                originalUpdate();
+                ShadowAdapter.render(vertices, window.POE_SEED.context);
+                requestAnimationFrame(animateWithShadow);
+            }
+            
+            // Start the integrated loop
+            animateWithShadow();
+        }, 1000);
+    </script>
+</body>
+</html>
