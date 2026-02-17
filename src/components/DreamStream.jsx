@@ -2,9 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Stage, Layer, Line, Text, Rect, Group } from 'react-konva';
 import { FILTER_MODES } from '../utils/constants';
 
-const DreamStream = ({ dreams }) => {
+const PolyformCharacter = ({ x, y, visible }) => {
+    if (!visible) return null;
+    return (
+        <Group x={x} y={y}>
+            <Rect width={30} height={30} fill="#ffd700" rotation={45} shadowBlur={10} />
+            <Rect width={20} height={20} x={15} y={-15} fill="#e53935" rotation={20} />
+            <Rect width={25} height={25} x={-20} y={10} fill="#039be5" rotation={-10} />
+        </Group>
+    );
+};
+
+const DreamStream = ({ dreams, streamSequence }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const [characterPos, setCharacterPos] = useState({ x: -100, y: window.innerHeight / 2 });
     const [stageSize, setStageSize] = useState({
         width: window.innerWidth,
         height: window.innerHeight
@@ -21,79 +34,107 @@ const DreamStream = ({ dreams }) => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    const sequence = streamSequence.length > 0 ? streamSequence : dreams.map(d => d.id);
+
     useEffect(() => {
-        if (!isPlaying || dreams.length === 0) return;
+        if (!isPlaying || sequence.length === 0) return;
 
         const interval = setInterval(() => {
-            setCurrentIndex((prev) => (prev + 1) % dreams.length);
-        }, 2000); // 2 seconds per frame
+            triggerTransition();
+        }, 3000);
 
         return () => clearInterval(interval);
-    }, [isPlaying, dreams]);
+    }, [isPlaying, sequence]);
 
-    if (dreams.length === 0) {
+    const triggerTransition = () => {
+        setIsTransitioning(true);
+        // Animate polyform character across the screen
+        let start = Date.now();
+        const duration = 1000;
+
+        const animateChar = () => {
+            const now = Date.now();
+            const p = Math.min((now - start) / duration, 1);
+
+            setCharacterPos({
+                x: -100 + (window.innerWidth + 200) * p,
+                y: window.innerHeight / 2 + Math.sin(p * Math.PI * 4) * 50
+            });
+
+            if (p < 0.5) {
+                // First half: drawing character
+            } else if (p >= 0.5 && isTransitioning) {
+                // At midpoint, swap the dream
+                setCurrentIndex((prev) => (prev + 1) % sequence.length);
+            }
+
+            if (p < 1) {
+                requestAnimationFrame(animateChar);
+            } else {
+                setIsTransitioning(false);
+                setCharacterPos({ x: -100, y: window.innerHeight / 2 });
+            }
+        };
+
+        requestAnimationFrame(animateChar);
+    };
+
+    if (sequence.length === 0) {
         return (
             <div className="dream-stream-empty">
-                <p>No dreams to stream yet.</p>
+                <p>Connect boards to start the stream.</p>
             </div>
         );
     }
 
-    const currentDream = dreams[currentIndex];
+    const currentDreamId = sequence[currentIndex];
+    const currentDream = dreams.find(d => d.id === currentDreamId) || dreams[0];
 
     return (
         <div className="dream-stream-container">
-            <Stage
-                width={stageSize.width}
-                height={stageSize.height}
-            >
+            <Stage width={stageSize.width} height={stageSize.height}>
                 <Layer>
-                    {/* The Dream Drawing */}
-                    {currentDream.lines.map((line, i) => (
-                        <Line
-                            key={i}
-                            points={line.points}
-                            stroke={line.color}
-                            strokeWidth={line.strokeWidth}
-                            tension={0.5}
-                            lineCap="round"
-                            lineJoin="round"
-                        />
-                    ))}
+                    <Group opacity={isTransitioning ? 0.6 : 1}>
+                        {currentDream.lines.map((line, i) => (
+                            <Line
+                                key={i}
+                                points={line.points}
+                                stroke={line.color}
+                                strokeWidth={line.strokeWidth}
+                                tension={0.5}
+                                lineCap="round"
+                                lineJoin="round"
+                            />
+                        ))}
 
-                    {/* The Overlays */}
-                    {currentDream.overlays && currentDream.overlays.map((overlay) => {
-                        const filter = FILTER_MODES.find(m => m.name === (overlay.filterMode || 'normal')) || FILTER_MODES[0];
-                        return (
-                            <Group key={overlay.id}>
-                                {/* Magic Lens Effect */}
-                                {filter.name !== 'normal' && (
+                        {currentDream.overlays && currentDream.overlays.map((overlay) => {
+                            const filter = FILTER_MODES.find(m => m.name === (overlay.filterMode || 'normal')) || FILTER_MODES[0];
+                            return (
+                                <Group key={overlay.id}>
+                                    {filter.name !== 'normal' && (
+                                        <Rect
+                                            x={overlay.x} y={overlay.y}
+                                            width={overlay.width} height={overlay.height}
+                                            fill={filter.fill}
+                                            globalCompositeOperation={filter.op}
+                                            opacity={filter.name === 'emotion' ? 0.5 : 1}
+                                        />
+                                    )}
                                     <Rect
-                                        x={overlay.x}
-                                        y={overlay.y}
-                                        width={overlay.width}
-                                        height={overlay.height}
-                                        fill={filter.fill}
-                                        globalCompositeOperation={filter.op}
-                                        opacity={filter.name === 'emotion' ? 0.5 : 1}
+                                        x={overlay.x} y={overlay.y}
+                                        width={overlay.width} height={overlay.height}
+                                        stroke={filter.stroke}
+                                        strokeWidth={overlay.strokeWidth || 5}
                                     />
-                                )}
-                                {/* Frame Frame */}
-                                <Rect
-                                    x={overlay.x}
-                                    y={overlay.y}
-                                    width={overlay.width}
-                                    height={overlay.height}
-                                    stroke={filter.stroke}
-                                    strokeWidth={overlay.strokeWidth || 5}
-                                />
-                            </Group>
-                        );
-                    })}
+                                </Group>
+                            );
+                        })}
+                    </Group>
 
-                    {/* Simple Overlay UI for controls */}
+                    <PolyformCharacter x={characterPos.x} y={characterPos.y} visible={isTransitioning} />
+
                     <Text
-                        text={`${currentIndex + 1} / ${dreams.length}`}
+                        text={`Scene ${currentIndex + 1} / ${sequence.length}`}
                         x={20}
                         y={stageSize.height - 40}
                         fontSize={16}
@@ -105,6 +146,9 @@ const DreamStream = ({ dreams }) => {
             <div className="stream-controls">
                 <button onClick={() => setIsPlaying(!isPlaying)}>
                     {isPlaying ? 'Pause' : 'Play'}
+                </button>
+                <button onClick={triggerTransition} disabled={isTransitioning} style={{ marginLeft: '10px' }}>
+                    Next
                 </button>
             </div>
         </div>

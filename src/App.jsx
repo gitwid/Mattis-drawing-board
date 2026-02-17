@@ -12,7 +12,8 @@ function App() {
     const [dreams, setDreams] = useState([]);
     const [mode, setMode] = useState('draw'); // 'draw', 'board', 'stream'
     const [selectedColor, setSelectedColor] = useState('#2c2c2c'); // Default Ink
-    const [isSwirling, setIsSwirling] = useState(false);
+    const [metaPaths, setMetaPaths] = useState([]);
+    const [streamSequence, setStreamSequence] = useState([]);
 
     // Helper to actually save data
     const captureData = () => {
@@ -28,23 +29,9 @@ function App() {
     const handleCaptureDream = () => {
         if (lines.length === 0 && overlays.length === 0) return;
         captureData();
-    };
-
-    const handleClear = () => {
-        // Trigger Swirl Animation
-        setIsSwirling(true);
-
-        // Auto-save if not empty
-        if (lines.length > 0 || overlays.length > 0) {
-            captureData();
-        }
-
-        // After animation, clear and reset
-        setTimeout(() => {
-            setLines([]);
-            setOverlays([]);
-            setIsSwirling(false);
-        }, 1000); // 1s matches animation duration
+        // Clear canvas after capture to allow fresh drawing
+        setLines([]);
+        setOverlays([]);
     };
 
     const addOverlay = () => {
@@ -62,7 +49,7 @@ function App() {
     };
 
     return (
-        <div className={`app-container ${isSwirling ? 'swirling' : ''}`}>
+        <div className="app-container">
             <div className="mode-toggle">
                 <button onClick={() => setMode('draw')} className={mode === 'draw' ? 'active' : ''}>Draw</button>
                 <button onClick={() => setMode('board')} className={mode === 'board' ? 'active' : ''}>Board ({dreams.length})</button>
@@ -75,14 +62,11 @@ function App() {
                         lines={lines} setLines={setLines}
                         overlays={overlays} setOverlays={setOverlays}
                         selectedColor={selectedColor}
+                        onCapture={handleCaptureDream}
                     />
                     <DreamCamera onCapture={handleCaptureDream} />
 
                     <ColorPalette selectedColor={selectedColor} onSelectColor={setSelectedColor} />
-
-                    <button className="clear-btn" onClick={handleClear} aria-label="New Sheet (Swirl)">
-                        ×
-                    </button>
 
                     <button className="add-overlay-btn" onClick={addOverlay} aria-label="Add Frame">
                         + Frame
@@ -91,11 +75,19 @@ function App() {
             )}
 
             {mode === 'board' && (
-                <DreamBoard dreams={dreams} />
+                <DreamBoard
+                    dreams={dreams}
+                    metaPaths={metaPaths}
+                    setMetaPaths={setMetaPaths}
+                    setStreamSequence={setStreamSequence}
+                />
             )}
 
             {mode === 'stream' && (
-                <DreamStream dreams={dreams} />
+                <DreamStream
+                    dreams={dreams}
+                    streamSequence={streamSequence}
+                />
             )}
         </div>
     )
