@@ -35,17 +35,48 @@ function App() {
     };
 
     const addOverlay = () => {
-        const newOverlay = {
-            id: uuidv4(),
-            x: window.innerWidth / 2 - 100,
-            y: window.innerHeight / 2 - 100,
-            width: 200,
-            height: 200,
+        const types = ['rect', 'circle', 'polygon', 'spline'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        const id = uuidv4();
+        const x = window.innerWidth / 2 - 100;
+        const y = window.innerHeight / 2 - 100;
+        const width = 200;
+        const height = 200;
+
+        let shapeData = {
+            id,
+            x, y,
+            width, height,
+            type,
             stroke: '#000',
             strokeWidth: 5,
             filterMode: 'normal',
         };
-        setOverlays([...overlays, newOverlay]);
+
+        if (type === 'polygon') {
+            // Random polygon (3 to 6 sides)
+            const sides = 3 + Math.floor(Math.random() * 4);
+            const points = [];
+            for (let i = 0; i < sides; i++) {
+                const angle = (i / sides) * Math.PI * 2;
+                points.push(Math.cos(angle) * 100 + 100);
+                points.push(Math.sin(angle) * 100 + 100);
+            }
+            shapeData.points = points;
+        } else if (type === 'spline') {
+            // Random spline (NURBS-like)
+            shapeData.points = [
+                20, 100,
+                60, 20,
+                140, 180,
+                180, 100
+            ];
+            shapeData.tension = 0.5;
+        } else if (type === 'circle') {
+            shapeData.radius = 100;
+        }
+
+        setOverlays([...overlays, shapeData]);
     };
 
     return (

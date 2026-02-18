@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Stage, Layer, Line, Text, Rect, Group } from 'react-konva';
+import { Stage, Layer, Line, Text, Rect, Group, Circle } from 'react-konva';
 import { FILTER_MODES } from '../utils/constants';
 
 const PolyformCharacter = ({ x, y, visible }) => {
@@ -79,6 +79,21 @@ const DreamStream = ({ dreams, streamSequence }) => {
         requestAnimationFrame(animateChar);
     };
 
+    const renderOverlayShape = (overlay, props) => {
+        const type = overlay.type || 'rect';
+        switch (type) {
+            case 'circle':
+                return <Circle {...props} radius={overlay.radius || 100} x={(overlay.radius || 100)} y={(overlay.radius || 100)} />;
+            case 'polygon':
+                return <Line {...props} points={overlay.points} closed />;
+            case 'spline':
+                return <Line {...props} points={overlay.points} tension={overlay.tension || 0.5} closed={false} />;
+            case 'rect':
+            default:
+                return <Rect {...props} width={overlay.width} height={overlay.height} />;
+        }
+    };
+
     if (sequence.length === 0) {
         return (
             <div className="dream-stream-empty">
@@ -110,22 +125,16 @@ const DreamStream = ({ dreams, streamSequence }) => {
                         {currentDream.overlays && currentDream.overlays.map((overlay) => {
                             const filter = FILTER_MODES.find(m => m.name === (overlay.filterMode || 'normal')) || FILTER_MODES[0];
                             return (
-                                <Group key={overlay.id}>
-                                    {filter.name !== 'normal' && (
-                                        <Rect
-                                            x={overlay.x} y={overlay.y}
-                                            width={overlay.width} height={overlay.height}
-                                            fill={filter.fill}
-                                            globalCompositeOperation={filter.op}
-                                            opacity={filter.name === 'emotion' ? 0.5 : 1}
-                                        />
-                                    )}
-                                    <Rect
-                                        x={overlay.x} y={overlay.y}
-                                        width={overlay.width} height={overlay.height}
-                                        stroke={filter.stroke}
-                                        strokeWidth={overlay.strokeWidth || 5}
-                                    />
+                                <Group key={overlay.id} x={overlay.x} y={overlay.y}>
+                                    {filter.name !== 'normal' && renderOverlayShape(overlay, {
+                                        fill: filter.fill,
+                                        globalCompositeOperation: filter.op,
+                                        opacity: filter.name === 'emotion' ? 0.5 : 1
+                                    })}
+                                    {renderOverlayShape(overlay, {
+                                        stroke: filter.stroke,
+                                        strokeWidth: overlay.strokeWidth || 5
+                                    })}
                                 </Group>
                             );
                         })}

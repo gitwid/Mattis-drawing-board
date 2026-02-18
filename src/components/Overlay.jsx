@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Rect, Transformer, Group, Text } from 'react-konva';
+import { Rect, Circle, Line, Transformer, Group, Text } from 'react-konva';
 import { FILTER_MODES } from '../utils/constants';
 
 const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
@@ -27,6 +27,21 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
 
     const currentFilter = FILTER_MODES.find(m => m.name === (shapeProps.filterMode || 'normal')) || FILTER_MODES[0];
 
+    const renderShape = (props) => {
+        const type = shapeProps.type || 'rect';
+        switch (type) {
+            case 'circle':
+                return <Circle {...props} radius={shapeProps.radius || 100} x={(shapeProps.radius || 100)} y={(shapeProps.radius || 100)} />;
+            case 'polygon':
+                return <Line {...props} points={shapeProps.points} closed />;
+            case 'spline':
+                return <Line {...props} points={shapeProps.points} tension={shapeProps.tension || 0.5} closed={false} />;
+            case 'rect':
+            default:
+                return <Rect {...props} width={shapeProps.width} height={shapeProps.height} />;
+        }
+    };
+
     return (
         <>
             <Group
@@ -46,31 +61,25 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
                 onDblTap={handleDoubleTap}
             >
                 {/* The Magic Lens Effect */}
-                {currentFilter.name !== 'normal' && (
-                    <Rect
-                        width={shapeProps.width}
-                        height={shapeProps.height}
-                        fill={currentFilter.fill}
-                        globalCompositeOperation={currentFilter.op}
-                        opacity={currentFilter.name === 'emotion' ? 0.5 : 1}
-                    />
-                )}
+                {currentFilter.name !== 'normal' && renderShape({
+                    fill: currentFilter.fill,
+                    globalCompositeOperation: currentFilter.op,
+                    opacity: currentFilter.name === 'emotion' ? 0.5 : 1
+                })}
 
                 {/* The Frame Frame */}
-                <Rect
-                    ref={shapeRef}
-                    width={shapeProps.width}
-                    height={shapeProps.height}
-                    stroke={currentFilter.stroke}
-                    strokeWidth={shapeProps.strokeWidth || 5}
-                />
+                {renderShape({
+                    ref: shapeRef,
+                    stroke: currentFilter.stroke,
+                    strokeWidth: shapeProps.strokeWidth || 5
+                })}
 
                 {/* Mode Label (Humorous Hint) */}
                 {currentFilter.name !== 'normal' && (
                     <Text
                         text={currentFilter.label}
-                        x={5}
-                        y={5}
+                        x={shapeProps.type === 'circle' ? shapeProps.radius : 5}
+                        y={shapeProps.type === 'circle' ? shapeProps.radius : 5}
                         fontSize={24}
                         fill={currentFilter.stroke}
                         opacity={0.8}
@@ -78,11 +87,9 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
                 )}
 
                 {/* Invisible hit area */}
-                <Rect
-                    width={shapeProps.width}
-                    height={shapeProps.height}
-                    fill="transparent"
-                />
+                {renderShape({
+                    fill: "transparent"
+                })}
             </Group>
 
             {isSelected && (
@@ -94,7 +101,7 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
                         }
                         return newBox;
                     }}
-                    rotateEnabled={false}
+                    rotateEnabled={true}
                 />
             )}
         </>
