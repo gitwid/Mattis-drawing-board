@@ -124,7 +124,7 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
                 />
             )}
 
-            {/* Vignette / Glow Effect */}
+            {/* Vignette / Glow Effect - This acts as the hit area */}
             <Rect
                 width={shapeProps.width}
                 height={shapeProps.height}
@@ -142,7 +142,7 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
                 strokeWidth={2}
                 shadowBlur={shapeProps.isCaptured ? 0 : 20}
                 shadowColor={vignetteColor}
-                listening={false}
+                listening={!shapeProps.isCaptured} // Enable hit area while uncaptured
             />
         </Group>
     );

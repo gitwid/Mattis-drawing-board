@@ -117,15 +117,18 @@ function App() {
 
     const addGlimpse = () => {
         const id = uuidv4();
-        const x = window.innerWidth / 2 - 150;
-        const y = window.innerHeight / 2 - 150;
-        const width = 300;
-        const height = 300;
+        // Use fresh window dimensions for centering
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const size = Math.min(w, h, 400) * 0.8;
+        const x = w / 2 - size / 2;
+        const y = h / 2 - size / 2;
 
         const shapeData = {
             id,
             x, y,
-            width, height,
+            width: size,
+            height: size,
             type: 'glimpse',
             stroke: '#fff',
             strokeWidth: 2,
@@ -157,16 +160,17 @@ function App() {
 
                     <ColorPalette selectedColor={selectedColor} onSelectColor={setSelectedColor} />
 
-                    <div className="overlay-controls">
-                        <button className="add-overlay-btn" onClick={addOverlay} aria-label="Add Frame">
-                            + Frame
+                    <ColorPalette selectedColor={selectedColor} onSelectColor={setSelectedColor} />
+
+                    {hasCameraPermission && (
+                        <button className="add-glimpse-btn shadow-fab" onClick={addGlimpse} aria-label="Add Glimpse">
+                            + Glimpse
                         </button>
-                        {hasCameraPermission && (
-                            <button className="add-glimpse-btn" onClick={addGlimpse} aria-label="Add Glimpse">
-                                + Glimpse
-                            </button>
-                        )}
-                    </div>
+                    )}
+
+                    <button className="add-overlay-btn shadow-fab" onClick={addOverlay} aria-label="Add Frame">
+                        + Frame
+                    </button>
                 </>
             )}
 
