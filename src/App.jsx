@@ -117,25 +117,54 @@ function App() {
 
     const addGlimpse = () => {
         const id = uuidv4();
-        // Use fresh window dimensions for centering
         const w = window.innerWidth;
         const h = window.innerHeight;
         const size = Math.min(w, h, 400) * 0.8;
         const x = w / 2 - size / 2;
         const y = h / 2 - size / 2;
 
-        const shapeData = {
+        const types = ['rect', 'circle', 'polygon', 'spline'];
+        const type = types[Math.floor(Math.random() * types.length)];
+
+        let shapeData = {
             id,
             x, y,
             width: size,
             height: size,
-            type: 'glimpse',
+            type: type,
             stroke: '#fff',
             strokeWidth: 2,
             filterMode: 'normal',
             isCaptured: false,
             capturedImage: null
         };
+
+        if (type === 'polygon') {
+            const sides = 3 + Math.floor(Math.random() * 4);
+            const points = [];
+            for (let i = 0; i < sides; i++) {
+                const angle = (i / sides) * Math.PI * 2;
+                points.push(Math.cos(angle) * (size / 2) + (size / 2));
+                points.push(Math.sin(angle) * (size / 2) + (size / 2));
+            }
+            shapeData.points = points;
+        } else if (type === 'spline') {
+            const steps = 8 + Math.floor(Math.random() * 4);
+            const points = [];
+            const centerX = size / 2;
+            const centerY = size / 2;
+            for (let i = 0; i < steps; i++) {
+                const angle = (i / steps) * Math.PI * 2;
+                const dist = (size / 4) + Math.random() * (size / 4);
+                points.push(centerX + Math.cos(angle) * dist);
+                points.push(centerY + Math.sin(angle) * dist);
+            }
+            shapeData.points = points;
+            shapeData.tension = 0.8;
+            shapeData.closed = true;
+        } else if (type === 'circle') {
+            shapeData.radius = size / 2;
+        }
 
         setOverlays([...overlays, shapeData]);
     };
@@ -156,21 +185,25 @@ function App() {
                         selectedColor={selectedColor}
                         onCapture={handleCaptureDream}
                     />
-                    <DreamCamera onCapture={handleCaptureDream} />
-
                     <ColorPalette selectedColor={selectedColor} onSelectColor={setSelectedColor} />
 
-                    <ColorPalette selectedColor={selectedColor} onSelectColor={setSelectedColor} />
+                    <div className="bottom-controls-bar">
+                        <div className="button-side left-side">
+                            {hasCameraPermission && (
+                                <button className="add-glimpse-btn shadow-fab" onClick={addGlimpse} aria-label="Add Glimpse">
+                                    + Glimpse
+                                </button>
+                            )}
+                        </div>
 
-                    {hasCameraPermission && (
-                        <button className="add-glimpse-btn shadow-fab" onClick={addGlimpse} aria-label="Add Glimpse">
-                            + Glimpse
-                        </button>
-                    )}
+                        <DreamCamera onCapture={handleCaptureDream} />
 
-                    <button className="add-overlay-btn shadow-fab" onClick={addOverlay} aria-label="Add Frame">
-                        + Frame
-                    </button>
+                        <div className="button-side right-side">
+                            <button className="add-overlay-btn shadow-fab" onClick={addOverlay} aria-label="Add Frame">
+                                + Frame
+                            </button>
+                        </div>
+                    </div>
                 </>
             )}
 

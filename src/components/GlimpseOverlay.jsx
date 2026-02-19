@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Group, Rect, Image } from 'react-konva';
+import { Group, Rect, Image, Circle, Line } from 'react-konva';
 import useImage from 'use-image';
 
 const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
@@ -99,51 +99,85 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
         }, 800);
     };
 
+    const getClipFunc = (ctx) => {
+        const type = shapeProps.type || 'rect';
+        const w = shapeProps.width;
+        const h = shapeProps.height;
+
+        if (type === 'circle') {
+            ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2, false);
+        } else if (type === 'rect') {
+            ctx.rect(0, 0, w, h);
+        } else if (shapeProps.points) {
+            const points = shapeProps.points;
+            ctx.moveTo(points[0], points[1]);
+            for (let i = 2; i < points.length; i += 2) {
+                ctx.lineTo(points[i], points[i + 1]);
+            }
+            ctx.closePath();
+        }
+    };
+
+    const renderShapeVignette = (props) => {
+        const type = shapeProps.type || 'rect';
+        const commonProps = {
+            ...props,
+            fillPriority: "radial-gradient",
+            fillRadialGradientStartPoint: { x: shapeProps.width / 2, y: shapeProps.height / 2 },
+            fillRadialGradientStartRadius: 0,
+            fillRadialGradientEndPoint: { x: shapeProps.width / 2, y: shapeProps.height / 2 },
+            fillRadialGradientEndRadius: shapeProps.width / 0.8,
+            fillRadialGradientColorStops: [
+                0, 'rgba(0,0,0,0)',
+                0.7, shapeProps.isCaptured ? shapeProps.persistentVignette : vignetteColor,
+                1, shapeProps.isCaptured ? shapeProps.persistentVignette : vignetteColor
+            ],
+            stroke: shapeProps.isCaptured ? '#eee' : '#fff',
+            strokeWidth: 2,
+            shadowBlur: shapeProps.isCaptured ? 0 : 20,
+            shadowColor: vignetteColor,
+            listening: !shapeProps.isCaptured
+        };
+
+        switch (type) {
+            case 'circle':
+                return <Circle {...commonProps} radius={shapeProps.width / 2} x={shapeProps.width / 2} y={shapeProps.height / 2} />;
+            case 'polygon':
+            case 'spline':
+                return <Line {...commonProps} points={shapeProps.points} tension={type === 'spline' ? 0.8 : 0} closed />;
+            case 'rect':
+            default:
+                return <Rect {...commonProps} width={shapeProps.width} height={shapeProps.height} />;
+        }
+    };
+
     return (
         <Group
-            x={shapeProps.x}
-            y={shapeProps.y}
             width={shapeProps.width}
             height={shapeProps.height}
             onClick={handleCapture}
             onTap={handleCapture}
         >
-            {/* Video or Captured Image */}
-            <Image
-                image={shapeProps.isCaptured ? null : videoElement}
-                width={shapeProps.width}
-                height={shapeProps.height}
-                fill={shapeProps.isCaptured ? `url(${shapeProps.capturedImage})` : undefined}
-                listening={false}
-            />
-            {shapeProps.isCaptured && (
-                <CapturedFrame
-                    imageUrl={shapeProps.capturedImage}
+            {/* Shaped Video or Captured Image */}
+            <Group clipFunc={getClipFunc}>
+                <Image
+                    image={shapeProps.isCaptured ? null : videoElement}
                     width={shapeProps.width}
                     height={shapeProps.height}
+                    fill={shapeProps.isCaptured ? `url(${shapeProps.capturedImage})` : undefined}
+                    listening={false}
                 />
-            )}
+                {shapeProps.isCaptured && (
+                    <CapturedFrame
+                        imageUrl={shapeProps.capturedImage}
+                        width={shapeProps.width}
+                        height={shapeProps.height}
+                    />
+                )}
+            </Group>
 
-            {/* Vignette / Glow Effect - This acts as the hit area */}
-            <Rect
-                width={shapeProps.width}
-                height={shapeProps.height}
-                fillPriority="radial-gradient"
-                fillRadialGradientStartPoint={{ x: shapeProps.width / 2, y: shapeProps.height / 2 }}
-                fillRadialGradientStartRadius={0}
-                fillRadialGradientEndPoint={{ x: shapeProps.width / 2, y: shapeProps.height / 2 }}
-                fillRadialGradientEndRadius={shapeProps.width / 0.8}
-                fillRadialGradientColorStops={[
-                    0, 'rgba(0,0,0,0)',
-                    0.7, shapeProps.isCaptured ? shapeProps.persistentVignette : vignetteColor,
-                    1, shapeProps.isCaptured ? shapeProps.persistentVignette : vignetteColor
-                ]}
-                stroke={shapeProps.isCaptured ? '#eee' : '#fff'}
-                strokeWidth={2}
-                shadowBlur={shapeProps.isCaptured ? 0 : 20}
-                shadowColor={vignetteColor}
-                listening={!shapeProps.isCaptured} // Enable hit area while uncaptured
-            />
+            {/* Vignette / Glow Effect - This also acts as the hit area */}
+            {renderShapeVignette({})}
         </Group>
     );
 };
