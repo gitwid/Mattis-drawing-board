@@ -27,6 +27,8 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 const video = document.createElement('video');
                 video.srcObject = stream;
+                video.muted = true; // Essential for autoplay
+                video.playsInline = true; // Essential for mobile/desktop autoplay
                 video.play();
                 setVideoElement(video);
                 videoRef.current = video;

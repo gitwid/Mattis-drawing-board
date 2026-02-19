@@ -40,10 +40,6 @@ h1 {
 }
 
 .dream-camera-btn {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 50%;
@@ -56,15 +52,17 @@ h1 {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   z-index: 100;
+  pointer-events: auto;
+  /* Ensure interaction inside the transparent bar */
 }
 
 .dream-camera-btn:hover {
-  transform: translateX(-50%) scale(1.1);
+  transform: scale(1.1);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .dream-camera-btn:active {
-  transform: translateX(-50%) scale(0.95);
+  transform: scale(0.95);
 }
 
 .mode-toggle {
