@@ -244,12 +244,14 @@ h1 {
 
 .left-side {
   justify-content: flex-end;
-  padding-right: 20px;
+  padding-right: 40px;
+  /* Increased gap for 60px camera button */
 }
 
 .right-side {
   justify-content: flex-start;
-  padding-left: 20px;
+  padding-left: 40px;
+  /* Increased gap for 60px camera button */
 }
 
 .shadow-fab {
@@ -263,6 +265,7 @@ h1 {
   justify-content: center;
   align-items: center;
   cursor: pointer;
+  pointer-events: auto;
   font-family: inherit;
   font-weight: 500;
   color: #555;

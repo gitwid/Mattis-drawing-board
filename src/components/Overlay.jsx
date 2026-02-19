@@ -29,17 +29,8 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
     const currentFilter = FILTER_MODES.find(m => m.name === (shapeProps.filterMode || 'normal')) || FILTER_MODES[0];
 
     const renderShape = (props) => {
-        const type = shapeProps.type || 'rect';
+        const type = shapeProps.type === 'glimpse' ? (shapeProps.glimpseType || 'rect') : (shapeProps.type || 'rect');
         switch (type) {
-            case 'glimpse':
-                return (
-                    <GlimpseOverlay
-                        shapeProps={shapeProps}
-                        isSelected={isSelected}
-                        onChange={onChange}
-                        {...props}
-                    />
-                );
             case 'circle':
                 return <Circle {...props} radius={shapeProps.radius || 100} x={(shapeProps.radius || 100)} y={(shapeProps.radius || 100)} />;
             case 'polygon':
@@ -77,12 +68,20 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
                 onDblClick={handleDoubleTap}
                 onDblTap={handleDoubleTap}
             >
-                {/* The Magic Lens Effect */}
-                {currentFilter.name !== 'normal' && renderShape({
-                    fill: currentFilter.fill,
-                    globalCompositeOperation: currentFilter.op,
-                    opacity: currentFilter.name === 'emotion' ? 0.5 : 1
-                })}
+                {/* The Magic Lens Effect / Camera Feed */}
+                {shapeProps.type === 'glimpse' ? (
+                    <GlimpseOverlay
+                        shapeProps={shapeProps}
+                        isSelected={isSelected}
+                        onChange={onChange}
+                    />
+                ) : (
+                    currentFilter.name !== 'normal' && renderShape({
+                        fill: currentFilter.fill,
+                        globalCompositeOperation: currentFilter.op,
+                        opacity: currentFilter.name === 'emotion' ? 0.5 : 1
+                    })
+                )}
 
                 {/* The Frame Frame */}
                 {renderShape({

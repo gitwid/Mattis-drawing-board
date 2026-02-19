@@ -27,9 +27,10 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 const video = document.createElement('video');
                 video.srcObject = stream;
-                video.muted = true; // Essential for autoplay
-                video.playsInline = true; // Essential for mobile/desktop autoplay
-                video.play();
+                video.muted = true;
+                video.playsInline = true;
+                video.setAttribute('autoplay', ''); // Extra insurance
+                video.play().catch(e => console.error("Autoplay failed:", e));
                 setVideoElement(video);
                 videoRef.current = video;
             } catch (err) {
@@ -102,7 +103,7 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
     };
 
     const getClipFunc = (ctx) => {
-        const type = shapeProps.type || 'rect';
+        const type = shapeProps.glimpseType || 'rect';
         const w = shapeProps.width;
         const h = shapeProps.height;
 
@@ -121,7 +122,7 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
     };
 
     const renderShapeVignette = (props) => {
-        const type = shapeProps.type || 'rect';
+        const type = shapeProps.glimpseType || 'rect';
         const commonProps = {
             ...props,
             fillPriority: "radial-gradient",

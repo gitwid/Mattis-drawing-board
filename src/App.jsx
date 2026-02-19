@@ -131,7 +131,8 @@ function App() {
             x, y,
             width: size,
             height: size,
-            type: type,
+            type: 'glimpse', // Routing type
+            glimpseType: type, // Use the randomized shape
             stroke: '#fff',
             strokeWidth: 2,
             filterMode: 'normal',
