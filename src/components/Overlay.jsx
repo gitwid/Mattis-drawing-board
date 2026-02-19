@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Rect, Circle, Line, Transformer, Group, Text } from 'react-konva';
 import { FILTER_MODES } from '../utils/constants';
+import GlimpseOverlay from './GlimpseOverlay';
 
 const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
     const shapeRef = useRef();
@@ -30,6 +31,15 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
     const renderShape = (props) => {
         const type = shapeProps.type || 'rect';
         switch (type) {
+            case 'glimpse':
+                return (
+                    <GlimpseOverlay
+                        shapeProps={shapeProps}
+                        isSelected={isSelected}
+                        onChange={onChange}
+                        {...props}
+                    />
+                );
             case 'circle':
                 return <Circle {...props} radius={shapeProps.radius || 100} x={(shapeProps.radius || 100)} y={(shapeProps.radius || 100)} />;
             case 'polygon':
@@ -55,8 +65,15 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
                         y: e.target.y(),
                     });
                 }}
-                onClick={onSelect}
-                onTap={onSelect}
+                onClick={(e) => {
+                    // If it's an uncaptured glimpse, capture takes precedence over selection
+                    if (shapeProps.type === 'glimpse' && !shapeProps.isCaptured) return;
+                    onSelect();
+                }}
+                onTap={(e) => {
+                    if (shapeProps.type === 'glimpse' && !shapeProps.isCaptured) return;
+                    onSelect();
+                }}
                 onDblClick={handleDoubleTap}
                 onDblTap={handleDoubleTap}
             >

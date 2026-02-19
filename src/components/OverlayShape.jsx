@@ -1,13 +1,22 @@
 import React from 'react';
 import { Line, Rect, Circle } from 'react-konva';
+import GlimpseOverlay from './GlimpseOverlay';
 
 /**
  * Reusable component to render different dream overlay shapes.
  */
-const OverlayShape = ({ overlay, ...props }) => {
+const OverlayShape = ({ overlay, onSelect, onChange, isSelected, ...props }) => {
     const type = overlay.type || 'rect';
 
     switch (type) {
+        case 'glimpse':
+            return (
+                <GlimpseOverlay
+                    shapeProps={overlay}
+                    isSelected={isSelected}
+                    onChange={onChange}
+                />
+            );
         case 'circle':
             return (
                 <Circle

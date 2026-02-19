@@ -14,6 +14,24 @@ function App() {
     const [selectedColor, setSelectedColor] = useState('#2c2c2c'); // Default Ink
     const [metaPaths, setMetaPaths] = useState([]);
     const [streamSequence, setStreamSequence] = useState([]);
+    const [hasCameraPermission, setHasCameraPermission] = useState(false);
+
+    // Check for camera permission on mount
+    React.useEffect(() => {
+        const checkCamera = async () => {
+            try {
+                // Request access immediately to show/hide the feature
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // We got it, so we can stop it for now
+                stream.getTracks().forEach(track => track.stop());
+                setHasCameraPermission(true);
+            } catch (err) {
+                console.log('Camera access denied or not available');
+                setHasCameraPermission(false);
+            }
+        };
+        checkCamera();
+    }, []);
 
     // Helper to actually save data
     const captureData = () => {
@@ -97,6 +115,28 @@ function App() {
         setOverlays([...overlays, shapeData]);
     };
 
+    const addGlimpse = () => {
+        const id = uuidv4();
+        const x = window.innerWidth / 2 - 150;
+        const y = window.innerHeight / 2 - 150;
+        const width = 300;
+        const height = 300;
+
+        const shapeData = {
+            id,
+            x, y,
+            width, height,
+            type: 'glimpse',
+            stroke: '#fff',
+            strokeWidth: 2,
+            filterMode: 'normal',
+            isCaptured: false,
+            capturedImage: null
+        };
+
+        setOverlays([...overlays, shapeData]);
+    };
+
     return (
         <div className="app-container">
             <div className="mode-toggle">
@@ -117,9 +157,16 @@ function App() {
 
                     <ColorPalette selectedColor={selectedColor} onSelectColor={setSelectedColor} />
 
-                    <button className="add-overlay-btn" onClick={addOverlay} aria-label="Add Frame">
-                        + Frame
-                    </button>
+                    <div className="overlay-controls">
+                        <button className="add-overlay-btn" onClick={addOverlay} aria-label="Add Frame">
+                            + Frame
+                        </button>
+                        {hasCameraPermission && (
+                            <button className="add-glimpse-btn" onClick={addGlimpse} aria-label="Add Glimpse">
+                                + Glimpse
+                            </button>
+                        )}
+                    </div>
                 </>
             )}
 
