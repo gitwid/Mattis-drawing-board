@@ -17,11 +17,23 @@ function App() {
 
     // Helper to actually save data
     const captureData = () => {
+        // Calculate a default grid position based on current count
+        const COLS = 3;
+        const MARGIN = 40;
+        const TILE_WIDTH = (window.innerWidth - MARGIN * (COLS + 1)) / COLS;
+        const index = dreams.length;
+        const col = index % COLS;
+        const row = Math.floor(index / COLS);
+        const x = MARGIN + col * (TILE_WIDTH + MARGIN);
+        const y = MARGIN + row * (TILE_WIDTH + MARGIN); // Use TILE_WIDTH for simple square grid or aspect ratio
+
         const newDream = {
             id: uuidv4(),
             lines: [...lines],
-            overlays: [...overlays], // Capture overlays too!
+            overlays: [...overlays],
             timestamp: Date.now(),
+            x: x,
+            y: y
         };
         setDreams(prev => [...prev, newDream]);
     };
@@ -114,6 +126,7 @@ function App() {
             {mode === 'board' && (
                 <DreamBoard
                     dreams={dreams}
+                    setDreams={setDreams}
                     metaPaths={metaPaths}
                     setMetaPaths={setMetaPaths}
                     setStreamSequence={setStreamSequence}

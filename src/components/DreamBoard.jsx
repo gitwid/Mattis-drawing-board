@@ -2,13 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Stage, Layer, Line, Group, Rect, Text, Circle } from 'react-konva';
 import { FILTER_MODES } from '../utils/constants';
 
-const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
+const DreamBoard = ({ dreams, setDreams, metaPaths, setMetaPaths, setStreamSequence }) => {
     const [stageSize, setStageSize] = useState({
         width: window.innerWidth,
         height: window.innerHeight
     });
     const [isDrawing, setIsDrawing] = useState(false);
+    const [interactionMode, setInteractionMode] = useState('move'); // 'move' or 'connect'
     const stageRef = React.useRef(null);
+
+    // Simple grid layout logic for background/reference if needed
+    const COLS = 3;
+    const MARGIN = 40;
+    const TILE_WIDTH = (stageSize.width - MARGIN * (COLS + 1)) / COLS;
+    const SCALE = TILE_WIDTH / window.innerWidth;
+    const TILE_HEIGHT = window.innerHeight * SCALE;
 
     const renderOverlayShape = (overlay, props) => {
         const type = overlay.type || 'rect';
@@ -36,14 +44,8 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Simple grid layout logic
-    const COLS = 3;
-    const MARGIN = 40;
-    const TILE_WIDTH = (stageSize.width - MARGIN * (COLS + 1)) / COLS;
-    const SCALE = TILE_WIDTH / window.innerWidth;
-    const TILE_HEIGHT = window.innerHeight * SCALE;
-
     const handleMouseDown = (e) => {
+        if (interactionMode !== 'connect') return;
         setIsDrawing(true);
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
@@ -54,7 +56,7 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
     };
 
     const handleMouseMove = (e) => {
-        if (!isDrawing) return;
+        if (!isDrawing || interactionMode !== 'connect') return;
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
         if (!pos) return;
@@ -74,7 +76,17 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
 
     const handleMouseUp = () => {
         setIsDrawing(false);
-        updateSequence();
+        if (interactionMode === 'connect') {
+            updateSequence();
+        }
+    };
+
+    const handleDragEnd = (e, id) => {
+        const newX = e.target.x();
+        const newY = e.target.y();
+        setDreams(prev => prev.map(d => d.id === id ? { ...d, x: newX, y: newY } : d));
+        // Also update sequence after move because the board moved
+        setTimeout(updateSequence, 0);
     };
 
     const updateSequence = () => {
@@ -87,15 +99,13 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
                 const px = points[i];
                 const py = points[i + 1];
 
-                dreams.forEach((dream, dreamIndex) => {
-                    const col = dreamIndex % COLS;
-                    const row = Math.floor(dreamIndex / COLS);
-                    const dx = MARGIN + col * (TILE_WIDTH + MARGIN);
-                    const dy = MARGIN + row * (TILE_HEIGHT + MARGIN);
+                dreams.forEach((dream) => {
+                    const x = dream.x || 0;
+                    const y = dream.y || 0;
 
-                    // Expand hit area slightly
-                    if (px >= dx - 5 && px <= dx + TILE_WIDTH + 5 &&
-                        py >= dy - 5 && py <= dy + TILE_HEIGHT + 5) {
+                    // Hit area based on TILE_WIDTH and TILE_HEIGHT
+                    if (px >= x - 5 && px <= x + TILE_WIDTH + 5 &&
+                        py >= y - 5 && py <= y + TILE_HEIGHT + 5) {
                         if (!sequenceSet.has(dream.id)) {
                             sequenceSet.add(dream.id);
                             orderedSequence.push(dream.id);
@@ -125,7 +135,8 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
                 ref={stageRef}
             >
                 <Layer>
-                    <Rect width={stageSize.width * 2} height={stageSize.height * 2} x={-stageSize.width} y={-stageSize.height} fill="#fdfaf6" />
+                    {/* The Background */}
+                    <Rect width={stageSize.width * 5} height={stageSize.height * 5} x={-stageSize.width * 2} y={-stageSize.height * 2} fill="#fdfaf6" />
 
                     {dreams.length === 0 && (
                         <Text
@@ -138,19 +149,16 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
                         />
                     )}
 
-                    {dreams.map((dream, index) => {
-                        const col = index % COLS;
-                        const row = Math.floor(index / COLS);
-                        const x = MARGIN + col * (TILE_WIDTH + MARGIN);
-                        const y = MARGIN + row * (TILE_HEIGHT + MARGIN);
-
+                    {dreams.map((dream) => {
                         return (
                             <Group
                                 key={dream.id}
-                                x={x}
-                                y={y}
+                                x={dream.x}
+                                y={dream.y}
                                 scaleX={SCALE}
                                 scaleY={SCALE}
+                                draggable={interactionMode === 'move'}
+                                onDragEnd={(e) => handleDragEnd(e, dream.id)}
                                 clipX={0} clipY={0} clipWidth={window.innerWidth} clipHeight={window.innerHeight}
                             >
                                 <Rect
@@ -211,13 +219,23 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
                 </Layer>
             </Stage>
 
-            <div className="board-instructions">
-                Connect the boards with the Pen of Connectivity to build your Dream Stream.
+            <div className="board-instructions mobile-bottom">
+                {interactionMode === 'move' ? 'Position your boards.' : 'Connect the boards with the Pen of Connectivity.'}
             </div>
 
-            <button className="clear-board-btn" onClick={() => { setMetaPaths([]); setStreamSequence([]); }}>
-                Reset Flow
-            </button>
+            <div className="board-controls">
+                <button
+                    className={`interaction-toggle-btn ${interactionMode === 'connect' ? 'active' : ''}`}
+                    onClick={() => setInteractionMode(interactionMode === 'move' ? 'connect' : 'move')}
+                    title={interactionMode === 'move' ? 'Switch to Connect' : 'Switch to Move'}
+                >
+                    {interactionMode === 'move' ? '🖊️' : '🤚'}
+                </button>
+
+                <button className="clear-board-btn-v2" onClick={() => { setMetaPaths([]); setStreamSequence([]); }}>
+                    Reset Flow
+                </button>
+            </div>
         </div>
     );
 };

@@ -47,10 +47,11 @@ const DreamStream = ({ dreams, streamSequence }) => {
     }, [isPlaying, sequence, isTransitioning, currentIndex]);
 
     const triggerTransition = () => {
+        if (isTransitioning) return;
         setIsTransitioning(true);
-        // Animate polyform character across the screen
         let start = Date.now();
-        const duration = 1000;
+        const duration = 1500; // Slightly slower for better feel
+        let swapped = false;
 
         const animateChar = () => {
             const now = Date.now();
@@ -58,14 +59,13 @@ const DreamStream = ({ dreams, streamSequence }) => {
 
             setCharacterPos({
                 x: -100 + (window.innerWidth + 200) * p,
-                y: window.innerHeight / 2 + Math.sin(p * Math.PI * 4) * 50
+                y: window.innerHeight / 2 + Math.sin(p * Math.PI * 4) * 80
             });
 
-            if (p < 0.5) {
-                // First half: drawing character
-            } else if (p >= 0.5 && isTransitioning) {
-                // At midpoint, swap the dream
+            if (p >= 0.5 && !swapped) {
+                // At midpoint, swap the dream exactly once
                 setCurrentIndex((prev) => (prev + 1) % sequence.length);
+                swapped = true;
             }
 
             if (p < 1) {
