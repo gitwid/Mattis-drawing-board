@@ -160,7 +160,7 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
             strokeWidth: 2,
             shadowBlur: shapeProps.isCaptured ? 0 : 20,
             shadowColor: vignetteColor,
-            listening: !shapeProps.isCaptured
+            listening: true // Provide a stable hit area to the group
         };
 
         switch (type) {
@@ -183,12 +183,11 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
             onTap={handleCapture}
         >
             {/* Shaped Video or Captured Image */}
-            <Group clipFunc={getClipFunc}>
+            <Group clipFunc={getClipFunc} listening={false}>
                 <Image
-                    image={shapeProps.isCaptured ? null : videoElement}
+                    image={shapeProps.isCaptured ? null : (videoElement && videoElement.videoWidth > 0 ? videoElement : undefined)}
                     width={shapeProps.width}
                     height={shapeProps.height}
-                    fill={shapeProps.isCaptured ? `url(${shapeProps.capturedImage})` : undefined}
                     listening={false}
                 />
                 {shapeProps.isCaptured && (
@@ -201,14 +200,14 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
             </Group>
 
             {/* Vignette / Glow Effect - This also acts as the hit area */}
-            {renderShapeVignette({})}
+            {renderShapeVignette({ listening: true })}
         </Group>
     );
 };
 
 const CapturedFrame = ({ imageUrl, width, height }) => {
     const [img] = useImage(imageUrl);
-    return <Image image={img} width={width} height={height} />;
+    return <Image image={img} width={width} height={height} listening={false} />;
 };
 
 export default GlimpseOverlay;
