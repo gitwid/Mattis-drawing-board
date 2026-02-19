@@ -1,51 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Group, Rect, Image, Circle, Line } from 'react-konva';
 import useImage from 'use-image';
 
 const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
-    const videoRef = useRef(null);
-    const [videoElement, setVideoElement] = useState(null);
-    const [vignetteColor, setVignetteColor] = useState('rgba(255, 255, 255, 0.5)');
     const frameCount = useRef(0);
-
-    // Shutter sound
-    const shutterSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
-
-    useEffect(() => {
-        if (shapeProps.isCaptured) return;
-
-        const startVideo = async () => {
-            try {
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                const constraints = {
-                    video: {
-                        facingMode: isMobile ? 'environment' : 'user',
-                        width: { ideal: 640 },
-                        height: { ideal: 640 }
-                    }
-                };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.muted = true;
-                video.playsInline = true;
-                video.setAttribute('autoplay', ''); // Extra insurance
-                video.play().catch(e => console.error("Autoplay failed:", e));
-                setVideoElement(video);
-                videoRef.current = video;
-            } catch (err) {
-                console.error("Glimpse video error:", err);
-            }
-        };
-
-        startVideo();
-
-        return () => {
-            if (videoRef.current && videoRef.current.srcObject) {
-                videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, [shapeProps.isCaptured]);
+    const [vignetteColor, setVignetteColor] = useState('rgba(255, 255, 255, 0.5)');
 
     // Oscillating vignette effect
     useEffect(() => {
@@ -68,60 +27,6 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
         animate();
         return () => cancelAnimationFrame(animationId);
     }, [shapeProps.isCaptured]);
-
-    const handleCapture = () => {
-        if (shapeProps.isCaptured || !videoElement) return;
-
-        // Guard against zero video dimensions causing a capture crash
-        const vW = videoElement.videoWidth || 640;
-        const vH = videoElement.videoHeight || 640;
-
-        // Play shutter sound
-        shutterSound.current.play().catch(e => console.log("Audio play failed", e));
-
-        const canvas = document.createElement('canvas');
-        canvas.width = vW;
-        canvas.height = vH;
-        const ctx = canvas.getContext('2d');
-
-        // Fallback to a solid color if video is somehow not rendering, to prevent completely black or empty image
-        if (!videoElement.videoWidth) {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, vW, vH);
-        } else {
-            ctx.drawImage(videoElement, 0, 0, vW, vH);
-        }
-
-        const capturedImage = canvas.toDataURL('image/png');
-
-        // Finalize vignette color to context
-        const persistentVignette = vignetteColor;
-
-        // Stop stream immediately to release camera handle
-        if (videoRef.current && videoRef.current.srcObject) {
-            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-        }
-
-        // We push state update synchronously (or immediately) so App.jsx can capture the populated board 
-        // 50ms later. (Removed 800ms delay that caused race conditions)
-        onChange({
-            ...shapeProps,
-            isCaptured: true,
-            capturedImage: capturedImage,
-            persistentVignette: persistentVignette
-        });
-    };
-
-    // Global listener so App.jsx can force capture
-    useEffect(() => {
-        const onForceCapture = () => {
-            if (!shapeProps.isCaptured) {
-                handleCapture();
-            }
-        };
-        window.addEventListener('force-glimpse-capture', onForceCapture);
-        return () => window.removeEventListener('force-glimpse-capture', onForceCapture);
-    }, [shapeProps.isCaptured, videoElement, vignetteColor]); // Re-bind on state changes
 
     const getClipFunc = (ctx) => {
         const type = shapeProps.glimpseType || 'rect';
@@ -179,25 +84,27 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
         <Group
             width={shapeProps.width}
             height={shapeProps.height}
-            onClick={handleCapture}
-            onTap={handleCapture}
+            onClick={() => {
+                if (!shapeProps.isCaptured) {
+                    window.dispatchEvent(new CustomEvent('force-glimpse-capture', { detail: shapeProps.id }));
+                }
+            }}
+            onTap={() => {
+                if (!shapeProps.isCaptured) {
+                    window.dispatchEvent(new CustomEvent('force-glimpse-capture', { detail: shapeProps.id }));
+                }
+            }}
         >
-            {/* Shaped Video or Captured Image */}
-            <Group clipFunc={getClipFunc} listening={false}>
-                <Image
-                    image={shapeProps.isCaptured ? null : (videoElement && videoElement.videoWidth > 0 ? videoElement : undefined)}
-                    width={shapeProps.width}
-                    height={shapeProps.height}
-                    listening={false}
-                />
-                {shapeProps.isCaptured && (
+            {/* Captured Image (Video feed is handled by external HTML overlay) */}
+            {shapeProps.isCaptured && (
+                <Group clipFunc={getClipFunc} listening={false}>
                     <CapturedFrame
                         imageUrl={shapeProps.capturedImage}
                         width={shapeProps.width}
                         height={shapeProps.height}
                     />
-                )}
-            </Group>
+                </Group>
+            )}
 
             {/* Vignette / Glow Effect - This also acts as the hit area */}
             {renderShapeVignette({ listening: true })}

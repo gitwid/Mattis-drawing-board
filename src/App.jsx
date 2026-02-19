@@ -4,6 +4,7 @@ import DreamCamera from './components/DreamCamera';
 import DreamBoard from './components/DreamBoard';
 import DreamStream from './components/DreamStream';
 import ColorPalette from './components/ColorPalette';
+import CameraStreamOverlay from './components/CameraStreamOverlay';
 import { v4 as uuidv4 } from 'uuid';
 
 function App() {
@@ -33,9 +34,7 @@ function App() {
         checkCamera();
     }, []);
 
-    // Helper to actually save data
-    const captureData = () => {
-        // Calculate a default grid position based on current count
+    const captureData = (currentLines, currentOverlays) => {
         const COLS = 3;
         const MARGIN = 40;
         const TILE_WIDTH = (window.innerWidth - MARGIN * (COLS + 1)) / COLS;
@@ -43,12 +42,12 @@ function App() {
         const col = index % COLS;
         const row = Math.floor(index / COLS);
         const x = MARGIN + col * (TILE_WIDTH + MARGIN);
-        const y = MARGIN + row * (TILE_WIDTH + MARGIN); // Use TILE_WIDTH for simple square grid or aspect ratio
+        const y = MARGIN + row * (TILE_WIDTH + MARGIN);
 
         const newDream = {
             id: uuidv4(),
-            lines: [...lines],
-            overlays: [...overlays],
+            lines: [...currentLines],
+            overlays: [...currentOverlays],
             timestamp: Date.now(),
             x: x,
             y: y
@@ -59,21 +58,39 @@ function App() {
     const handleCaptureDream = () => {
         if (lines.length === 0 && overlays.length === 0) return;
 
-        // Force any uncaptured glimpses to capture themselves
-        window.dispatchEvent(new Event('force-glimpse-capture'));
+        // Is there an active glimpse?
+        const hasUncapturedGlimpse = overlays.some(o => o.type === 'glimpse' && !o.isCaptured);
 
-        // Short delay to allow glimpses to update their state if they were just capturing
-        setTimeout(() => {
-            // Re-check state if needed, but since captureData uses state closure, it needs 
-            // the state that INCLUDES the captured image. 
-            // Actually, we can use the functional update pattern or just use the current state.
-            // But if Glimpse calls onChange synchronously, the next render will have it. Let's wait a tick.
-            captureData();
-            // Clear canvas after capture to allow fresh drawing
+        if (hasUncapturedGlimpse) {
+            // Give the CameraStreamOverlay the signal to grab the image
+            window.dispatchEvent(new Event('force-glimpse-capture'));
+            // The overlay's onCapture callback will update the overlays state.
+            // We use a useEffect later to detect the flush, or we can just wait longer.
+            // Better yet, App itself handles the state, let's use a flag.
+            setPendingCapture(true);
+        } else {
+            captureData(lines, overlays);
             setLines([]);
             setOverlays([]);
-        }, 50);
+        }
     };
+
+    // State to act as a semaphore for sequential capture
+    const [pendingCapture, setPendingCapture] = useState(false);
+
+    React.useEffect(() => {
+        if (pendingCapture) {
+            // Check if all glimpses are now captured
+            const allCaptured = overlays.every(o => o.type !== 'glimpse' || o.isCaptured);
+            if (allCaptured) {
+                // If the state finally reflects the captured images, push to the board
+                captureData(lines, overlays);
+                setLines([]);
+                setOverlays([]);
+                setPendingCapture(false);
+            }
+        }
+    }, [overlays, lines, pendingCapture]);
 
     const addOverlay = () => {
         const types = ['rect', 'circle', 'polygon', 'spline'];
@@ -195,6 +212,19 @@ function App() {
 
             {mode === 'draw' && (
                 <>
+                    {/* HTML Video Overlays for active Glimpses */}
+                    {overlays.filter(o => o.type === 'glimpse' && !o.isCaptured).map(glimpse => (
+                        <CameraStreamOverlay
+                            key={`cam-${glimpse.id}`}
+                            activeGlimpse={glimpse}
+                            onCapture={(id, imgData) => {
+                                setOverlays(prev => prev.map(o =>
+                                    o.id === id ? { ...o, isCaptured: true, capturedImage: imgData } : o
+                                ));
+                            }}
+                        />
+                    ))}
+
                     <DrawingCanvas
                         lines={lines} setLines={setLines}
                         overlays={overlays} setOverlays={setOverlays}

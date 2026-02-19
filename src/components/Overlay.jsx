@@ -56,6 +56,23 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
                         y: e.target.y(),
                     });
                 }}
+                onDragMove={(e) => {
+                    onChange({
+                        ...shapeProps,
+                        x: e.target.x(),
+                        y: e.target.y(),
+                    });
+                }}
+                onTransform={(e) => {
+                    onChange({
+                        ...shapeProps,
+                        x: e.target.x(),
+                        y: e.target.y(),
+                        rotation: e.target.rotation(),
+                        scaleX: e.target.scaleX(),
+                        scaleY: e.target.scaleY(),
+                    });
+                }}
                 onClick={(e) => {
                     // If it's an uncaptured glimpse, capture takes precedence over selection
                     if (shapeProps.type === 'glimpse' && !shapeProps.isCaptured) return;
