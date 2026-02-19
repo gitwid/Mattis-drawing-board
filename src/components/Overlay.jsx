@@ -35,7 +35,7 @@ const Overlay = ({ shapeProps, isSelected, onSelect, onChange }) => {
             case 'polygon':
                 return <Line {...props} points={shapeProps.points} closed />;
             case 'spline':
-                return <Line {...props} points={shapeProps.points} tension={shapeProps.tension || 0.5} closed={false} />;
+                return <Line {...props} points={shapeProps.points} tension={shapeProps.tension || 0.5} closed={shapeProps.closed || false} />;
             case 'rect':
             default:
                 return <Rect {...props} width={shapeProps.width} height={shapeProps.height} />;

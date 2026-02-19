@@ -37,14 +37,14 @@ const DreamStream = ({ dreams, streamSequence }) => {
     const sequence = streamSequence.length > 0 ? streamSequence : dreams.map(d => d.id);
 
     useEffect(() => {
-        if (!isPlaying || sequence.length === 0) return;
+        if (!isPlaying || sequence.length === 0 || isTransitioning) return;
 
-        const interval = setInterval(() => {
+        const timer = setTimeout(() => {
             triggerTransition();
-        }, 3000);
+        }, 4000); // 4 seconds between transitions
 
-        return () => clearInterval(interval);
-    }, [isPlaying, sequence]);
+        return () => clearTimeout(timer);
+    }, [isPlaying, sequence, isTransitioning, currentIndex]);
 
     const triggerTransition = () => {
         setIsTransitioning(true);
@@ -87,7 +87,7 @@ const DreamStream = ({ dreams, streamSequence }) => {
             case 'polygon':
                 return <Line {...props} points={overlay.points} closed />;
             case 'spline':
-                return <Line {...props} points={overlay.points} tension={overlay.tension || 0.5} closed={false} />;
+                return <Line {...props} points={overlay.points} tension={overlay.tension || 0.5} closed={overlay.closed || false} />;
             case 'rect':
             default:
                 return <Rect {...props} width={overlay.width} height={overlay.height} />;

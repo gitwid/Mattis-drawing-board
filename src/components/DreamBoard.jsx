@@ -18,7 +18,7 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
             case 'polygon':
                 return <Line {...props} points={overlay.points} closed />;
             case 'spline':
-                return <Line {...props} points={overlay.points} tension={overlay.tension || 0.5} closed={false} />;
+                return <Line {...props} points={overlay.points} tension={overlay.tension || 0.5} closed={overlay.closed || false} />;
             case 'rect':
             default:
                 return <Rect {...props} width={overlay.width} height={overlay.height} />;
@@ -44,31 +44,32 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
     const TILE_HEIGHT = window.innerHeight * SCALE;
 
     const handleMouseDown = (e) => {
-        // Only draw if we're not dragging the stage (or maybe middle click for drag)
-        // For simplicity, let's say drawing starts if we touch/click
         setIsDrawing(true);
-        const pos = e.target.getStage().getPointerPosition();
-        // Convert to absolute coordinates relative to stage layer
         const stage = e.target.getStage();
+        const pos = stage.getPointerPosition();
         const transform = stage.getAbsoluteTransform().copy().invert();
         const pt = transform.point(pos);
 
-        setMetaPaths([...metaPaths, { points: [pt.x, pt.y] }]);
+        setMetaPaths(prev => [...prev, { points: [pt.x, pt.y] }]);
     };
 
     const handleMouseMove = (e) => {
         if (!isDrawing) return;
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
+        if (!pos) return;
+
         const transform = stage.getAbsoluteTransform().copy().invert();
         const pt = transform.point(pos);
 
-        const lastPath = metaPaths[metaPaths.length - 1];
-        const newPoints = [...lastPath.points, pt.x, pt.y];
-
-        const newPaths = [...metaPaths];
-        newPaths[metaPaths.length - 1] = { ...lastPath, points: newPoints };
-        setMetaPaths(newPaths);
+        setMetaPaths(prev => {
+            if (prev.length === 0) return prev;
+            const lastPath = prev[prev.length - 1];
+            const newPoints = [...lastPath.points, pt.x, pt.y];
+            const newPaths = [...prev];
+            newPaths[prev.length - 1] = { ...lastPath, points: newPoints };
+            return newPaths;
+        });
     };
 
     const handleMouseUp = () => {
@@ -77,7 +78,6 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
     };
 
     const updateSequence = () => {
-        // Calculate which dreams are touched by the paths
         const sequenceSet = new Set();
         const orderedSequence = [];
 
@@ -93,7 +93,9 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
                     const dx = MARGIN + col * (TILE_WIDTH + MARGIN);
                     const dy = MARGIN + row * (TILE_HEIGHT + MARGIN);
 
-                    if (px >= dx && px <= dx + TILE_WIDTH && py >= dy && py <= dy + TILE_HEIGHT) {
+                    // Expand hit area slightly
+                    if (px >= dx - 5 && px <= dx + TILE_WIDTH + 5 &&
+                        py >= dy - 5 && py <= dy + TILE_HEIGHT + 5) {
                         if (!sequenceSet.has(dream.id)) {
                             sequenceSet.add(dream.id);
                             orderedSequence.push(dream.id);
@@ -103,7 +105,9 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
             }
         });
 
-        setStreamSequence(orderedSequence);
+        if (orderedSequence.length > 0) {
+            setStreamSequence(orderedSequence);
+        }
     };
 
     return (
@@ -115,6 +119,9 @@ const DreamBoard = ({ dreams, metaPaths, setMetaPaths, setStreamSequence }) => {
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
+                onTouchStart={handleMouseDown}
+                onTouchMove={handleMouseMove}
+                onTouchEnd={handleMouseUp}
                 ref={stageRef}
             >
                 <Layer>

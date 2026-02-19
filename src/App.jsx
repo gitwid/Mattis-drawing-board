@@ -64,14 +64,20 @@ function App() {
             }
             shapeData.points = points;
         } else if (type === 'spline') {
-            // Random spline (NURBS-like)
-            shapeData.points = [
-                20, 100,
-                60, 20,
-                140, 180,
-                180, 100
-            ];
-            shapeData.tension = 0.5;
+            // Random amorphous blob (NURBS-style closed spline)
+            const steps = 8 + Math.floor(Math.random() * 4);
+            const points = [];
+            const centerX = 100;
+            const centerY = 100;
+            for (let i = 0; i < steps; i++) {
+                const angle = (i / steps) * Math.PI * 2;
+                const dist = 60 + Math.random() * 40;
+                points.push(centerX + Math.cos(angle) * dist);
+                points.push(centerY + Math.sin(angle) * dist);
+            }
+            shapeData.points = points;
+            shapeData.tension = 0.8;
+            shapeData.closed = true;
         } else if (type === 'circle') {
             shapeData.radius = 100;
         }

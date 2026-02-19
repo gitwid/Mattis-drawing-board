@@ -74,6 +74,8 @@ const DrawingCanvas = ({ lines, setLines, overlays, setOverlays, selectedColor, 
         }
     };
 
+    const [isSwirling, setIsSwirling] = useState(false);
+
     const handleMouseUp = (e) => {
         if (!isDrawing.current) return;
 
@@ -86,14 +88,73 @@ const DrawingCanvas = ({ lines, setLines, overlays, setOverlays, selectedColor, 
                 Math.pow(point.y - startPoint.current.y, 2)
             );
 
-            // If a loop was closed, trigger capture
-            if (lines[lines.length - 1].points.length > 20 && dist < 30) {
-                onCapture();
+            // If a loop was closed, trigger swirl animation then capture
+            if (lines.length > 0 && lines[lines.length - 1].points.length > 20 && dist < 35) {
+                triggerSwirl();
+                return;
             }
         }
 
         isDrawing.current = false;
         startPoint.current = null;
+    };
+
+    const triggerSwirl = () => {
+        setIsSwirling(true);
+        isDrawing.current = false;
+
+        // Calculate center of the lasso (average position)
+        const lastLine = lines[lines.length - 1];
+        let sumX = 0, sumY = 0;
+        for (let i = 0; i < lastLine.points.length; i += 2) {
+            sumX += lastLine.points[i];
+            sumY += lastLine.points[i + 1];
+        }
+        const centerX = sumX / (lastLine.points.length / 2);
+        const centerY = sumY / (lastLine.points.length / 2);
+
+        let start = Date.now();
+        const duration = 800;
+
+        const animateSwirl = () => {
+            const now = Date.now();
+            const p = Math.min((now - start) / duration, 1);
+
+            // Transform all lines points towards center with a spiral
+            setLines(prevLines => prevLines.map(line => {
+                const newPoints = [];
+                for (let i = 0; i < line.points.length; i += 2) {
+                    const x = line.points[i];
+                    const y = line.points[i + 1];
+
+                    const dx = x - centerX;
+                    const dy = y - centerY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx);
+
+                    // Spiral: rotate and move towards center
+                    const spiralAngle = angle + p * Math.PI * 2;
+                    const newDist = dist * (1 - p);
+
+                    newPoints.push(centerX + Math.cos(spiralAngle) * newDist);
+                    newPoints.push(centerY + Math.sin(spiralAngle) * newDist);
+                }
+                return { ...line, points: newPoints };
+            }));
+
+            if (p < 1) {
+                requestAnimationFrame(animateSwirl);
+            } else {
+                setIsSwirling(false);
+                startPoint.current = null;
+                // Wait a tiny bit for the visual to vanish
+                setTimeout(() => {
+                    onCapture();
+                }, 100);
+            }
+        };
+
+        requestAnimationFrame(animateSwirl);
     };
 
     const handleOverlayChange = (newAttrs, i) => {
