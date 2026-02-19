@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Stage, Layer, Line, Text, Rect, Group, Circle } from 'react-konva';
 import { FILTER_MODES } from '../utils/constants';
+import OverlayShape from './OverlayShape';
 
 const PolyformCharacter = ({ x, y, visible }) => {
     if (!visible) return null;
@@ -79,20 +80,6 @@ const DreamStream = ({ dreams, streamSequence }) => {
         requestAnimationFrame(animateChar);
     };
 
-    const renderOverlayShape = (overlay, props) => {
-        const type = overlay.type || 'rect';
-        switch (type) {
-            case 'circle':
-                return <Circle {...props} radius={overlay.radius || 100} x={(overlay.radius || 100)} y={(overlay.radius || 100)} />;
-            case 'polygon':
-                return <Line {...props} points={overlay.points} closed />;
-            case 'spline':
-                return <Line {...props} points={overlay.points} tension={overlay.tension || 0.5} closed={overlay.closed || false} />;
-            case 'rect':
-            default:
-                return <Rect {...props} width={overlay.width} height={overlay.height} />;
-        }
-    };
 
     if (sequence.length === 0) {
         return (
@@ -126,15 +113,19 @@ const DreamStream = ({ dreams, streamSequence }) => {
                             const filter = FILTER_MODES.find(m => m.name === (overlay.filterMode || 'normal')) || FILTER_MODES[0];
                             return (
                                 <Group key={overlay.id} x={overlay.x} y={overlay.y}>
-                                    {filter.name !== 'normal' && renderOverlayShape(overlay, {
-                                        fill: filter.fill,
-                                        globalCompositeOperation: filter.op,
-                                        opacity: filter.name === 'emotion' ? 0.5 : 1
-                                    })}
-                                    {renderOverlayShape(overlay, {
-                                        stroke: filter.stroke,
-                                        strokeWidth: overlay.strokeWidth || 5
-                                    })}
+                                    {filter.name !== 'normal' && (
+                                        <OverlayShape
+                                            overlay={overlay}
+                                            fill={filter.fill}
+                                            globalCompositeOperation={filter.op}
+                                            opacity={filter.name === 'emotion' ? 0.5 : 1}
+                                        />
+                                    )}
+                                    <OverlayShape
+                                        overlay={overlay}
+                                        stroke={filter.stroke}
+                                        strokeWidth={overlay.strokeWidth || 5}
+                                    />
                                 </Group>
                             );
                         })}

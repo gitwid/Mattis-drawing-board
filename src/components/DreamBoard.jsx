@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Stage, Layer, Line, Group, Rect, Text, Circle } from 'react-konva';
 import { FILTER_MODES } from '../utils/constants';
+import OverlayShape from './OverlayShape';
 
 const DreamBoard = ({ dreams, setDreams, metaPaths, setMetaPaths, setStreamSequence }) => {
     const [stageSize, setStageSize] = useState({
@@ -17,21 +18,6 @@ const DreamBoard = ({ dreams, setDreams, metaPaths, setMetaPaths, setStreamSeque
     const TILE_WIDTH = (stageSize.width - MARGIN * (COLS + 1)) / COLS;
     const SCALE = TILE_WIDTH / window.innerWidth;
     const TILE_HEIGHT = window.innerHeight * SCALE;
-
-    const renderOverlayShape = (overlay, props) => {
-        const type = overlay.type || 'rect';
-        switch (type) {
-            case 'circle':
-                return <Circle {...props} radius={overlay.radius || 100} x={(overlay.radius || 100)} y={(overlay.radius || 100)} />;
-            case 'polygon':
-                return <Line {...props} points={overlay.points} closed />;
-            case 'spline':
-                return <Line {...props} points={overlay.points} tension={overlay.tension || 0.5} closed={overlay.closed || false} />;
-            case 'rect':
-            default:
-                return <Rect {...props} width={overlay.width} height={overlay.height} />;
-        }
-    };
 
     useEffect(() => {
         const handleResize = () => {
@@ -76,20 +62,9 @@ const DreamBoard = ({ dreams, setDreams, metaPaths, setMetaPaths, setStreamSeque
 
     const handleMouseUp = () => {
         setIsDrawing(false);
-        if (interactionMode === 'connect') {
-            updateSequence();
-        }
     };
 
-    const handleDragEnd = (e, id) => {
-        const newX = e.target.x();
-        const newY = e.target.y();
-        setDreams(prev => prev.map(d => d.id === id ? { ...d, x: newX, y: newY } : d));
-        // Also update sequence after move because the board moved
-        setTimeout(updateSequence, 0);
-    };
-
-    const updateSequence = () => {
+    const updateSequence = useCallback(() => {
         const sequenceSet = new Set();
         const orderedSequence = [];
 
@@ -103,7 +78,8 @@ const DreamBoard = ({ dreams, setDreams, metaPaths, setMetaPaths, setStreamSeque
                     const x = dream.x || 0;
                     const y = dream.y || 0;
 
-                    // Hit area based on TILE_WIDTH and TILE_HEIGHT
+                    // Hit detection: Check if the Pen path tip is inside a board
+                    // TILE_WIDTH and TILE_HEIGHT represent the scaled board size
                     if (px >= x - 5 && px <= x + TILE_WIDTH + 5 &&
                         py >= y - 5 && py <= y + TILE_HEIGHT + 5) {
                         if (!sequenceSet.has(dream.id)) {
@@ -118,6 +94,17 @@ const DreamBoard = ({ dreams, setDreams, metaPaths, setMetaPaths, setStreamSeque
         if (orderedSequence.length > 0) {
             setStreamSequence(orderedSequence);
         }
+    }, [dreams, metaPaths, TILE_WIDTH, TILE_HEIGHT, setStreamSequence]);
+
+    // Reactively update the sequence whenever the boards move or the connections change
+    useEffect(() => {
+        updateSequence();
+    }, [dreams, metaPaths, updateSequence]);
+
+    const handleDragEnd = (e, id) => {
+        const newX = e.target.x();
+        const newY = e.target.y();
+        setDreams(prev => prev.map(d => d.id === id ? { ...d, x: newX, y: newY } : d));
     };
 
     return (
@@ -186,15 +173,19 @@ const DreamBoard = ({ dreams, setDreams, metaPaths, setMetaPaths, setStreamSeque
                                     const filter = FILTER_MODES.find(m => m.name === (overlay.filterMode || 'normal')) || FILTER_MODES[0];
                                     return (
                                         <Group key={overlay.id} x={overlay.x} y={overlay.y}>
-                                            {filter.name !== 'normal' && renderOverlayShape(overlay, {
-                                                fill: filter.fill,
-                                                globalCompositeOperation: filter.op,
-                                                opacity: filter.name === 'emotion' ? 0.5 : 1
-                                            })}
-                                            {renderOverlayShape(overlay, {
-                                                stroke: filter.stroke,
-                                                strokeWidth: overlay.strokeWidth || 5
-                                            })}
+                                            {filter.name !== 'normal' && (
+                                                <OverlayShape
+                                                    overlay={overlay}
+                                                    fill={filter.fill}
+                                                    globalCompositeOperation={filter.op}
+                                                    opacity={filter.name === 'emotion' ? 0.5 : 1}
+                                                />
+                                            )}
+                                            <OverlayShape
+                                                overlay={overlay}
+                                                stroke={filter.stroke}
+                                                strokeWidth={overlay.strokeWidth || 5}
+                                            />
                                         </Group>
                                     );
                                 })}
