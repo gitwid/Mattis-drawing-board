@@ -69,6 +69,15 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
     const handleCapture = () => {
         if (shapeProps.isCaptured || !videoElement) return;
 
+        // Play shutter sound
+        shutterSound.current.play().catch(e => console.log("Audio play failed", e));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoElement, 0, 0);
+
         const capturedImage = canvas.toDataURL('image/png');
 
         // Finalize vignette color to context
