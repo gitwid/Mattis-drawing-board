@@ -17,6 +17,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install and Build 🔧
+        env:
+          VITE_GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
           npm install
           npm run build

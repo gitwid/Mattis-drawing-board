@@ -58,10 +58,21 @@ function App() {
 
     const handleCaptureDream = () => {
         if (lines.length === 0 && overlays.length === 0) return;
-        captureData();
-        // Clear canvas after capture to allow fresh drawing
-        setLines([]);
-        setOverlays([]);
+
+        // Force any uncaptured glimpses to capture themselves
+        window.dispatchEvent(new Event('force-glimpse-capture'));
+
+        // Short delay to allow glimpses to update their state if they were just capturing
+        setTimeout(() => {
+            // Re-check state if needed, but since captureData uses state closure, it needs 
+            // the state that INCLUDES the captured image. 
+            // Actually, we can use the functional update pattern or just use the current state.
+            // But if Glimpse calls onChange synchronously, the next render will have it. Let's wait a tick.
+            captureData();
+            // Clear canvas after capture to allow fresh drawing
+            setLines([]);
+            setOverlays([]);
+        }, 50);
     };
 
     const addOverlay = () => {
@@ -176,6 +187,10 @@ function App() {
                 <button onClick={() => setMode('draw')} className={mode === 'draw' ? 'active' : ''}>Draw</button>
                 <button onClick={() => setMode('board')} className={mode === 'board' ? 'active' : ''}>Board ({dreams.length})</button>
                 <button onClick={() => setMode('stream')} className={mode === 'stream' ? 'active' : ''}>Stream</button>
+            </div>
+
+            <div className="build-deployment-info">
+                pages-build-deployment #{import.meta.env.VITE_GITHUB_RUN_NUMBER || 'dev'}
             </div>
 
             {mode === 'draw' && (

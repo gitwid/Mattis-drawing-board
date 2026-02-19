@@ -72,35 +72,56 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
     const handleCapture = () => {
         if (shapeProps.isCaptured || !videoElement) return;
 
+        // Guard against zero video dimensions causing a capture crash
+        const vW = videoElement.videoWidth || 640;
+        const vH = videoElement.videoHeight || 640;
+
         // Play shutter sound
         shutterSound.current.play().catch(e => console.log("Audio play failed", e));
 
         const canvas = document.createElement('canvas');
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
+        canvas.width = vW;
+        canvas.height = vH;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(videoElement, 0, 0);
+
+        // Fallback to a solid color if video is somehow not rendering, to prevent completely black or empty image
+        if (!videoElement.videoWidth) {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, vW, vH);
+        } else {
+            ctx.drawImage(videoElement, 0, 0, vW, vH);
+        }
 
         const capturedImage = canvas.toDataURL('image/png');
 
         // Finalize vignette color to context
         const persistentVignette = vignetteColor;
 
-        // Stay in focus for a brief moment (800ms) before transitioning to regular frame
-        setTimeout(() => {
-            // Stop stream
-            if (videoRef.current && videoRef.current.srcObject) {
-                videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-            }
+        // Stop stream immediately to release camera handle
+        if (videoRef.current && videoRef.current.srcObject) {
+            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+        }
 
-            onChange({
-                ...shapeProps,
-                isCaptured: true,
-                capturedImage: capturedImage,
-                persistentVignette: persistentVignette
-            });
-        }, 800);
+        // We push state update synchronously (or immediately) so App.jsx can capture the populated board 
+        // 50ms later. (Removed 800ms delay that caused race conditions)
+        onChange({
+            ...shapeProps,
+            isCaptured: true,
+            capturedImage: capturedImage,
+            persistentVignette: persistentVignette
+        });
     };
+
+    // Global listener so App.jsx can force capture
+    useEffect(() => {
+        const onForceCapture = () => {
+            if (!shapeProps.isCaptured) {
+                handleCapture();
+            }
+        };
+        window.addEventListener('force-glimpse-capture', onForceCapture);
+        return () => window.removeEventListener('force-glimpse-capture', onForceCapture);
+    }, [shapeProps.isCaptured, videoElement, vignetteColor]); // Re-bind on state changes
 
     const getClipFunc = (ctx) => {
         const type = shapeProps.glimpseType || 'rect';
