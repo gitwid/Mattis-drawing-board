@@ -27,7 +27,10 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 const video = document.createElement('video');
                 video.srcObject = stream;
-                video.play();
+                video.muted = true;
+                video.playsInline = true;
+                video.setAttribute('autoplay', ''); // Extra insurance for iOS Safari
+                video.play().catch(e => console.error("Autoplay failed:", e));
                 setVideoElement(video);
                 videoRef.current = video;
             } catch (err) {
