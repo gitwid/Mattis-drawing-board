@@ -52,16 +52,20 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
         if (shapeProps.isCaptured) return;
 
         let animationId;
+        let lastTime = Date.now();
         const animate = () => {
-            frameCount.current += 1;
-            const t = (Math.sin(frameCount.current * 0.05) + 1) / 2; // 0 to 1
+            const now = Date.now();
+            if (now - lastTime >= 60) { // Throttle to ~16 fps to prevent React from strangling the Konva drag thread
+                frameCount.current += 1;
+                const t = (Math.sin(frameCount.current * 0.2) + 1) / 2; // 0 to 1
 
-            // Colors: Warm White (255,250,240), Soft Blue (200,220,255), Context (255,215,0)
-            const r = Math.floor(255 * (1 - t) + 200 * t);
-            const g = Math.floor(250 * (1 - t) + 220 * t);
-            const b = Math.floor(240 * (1 - t) + 255 * t);
+                const r = Math.floor(255 * (1 - t) + 200 * t);
+                const g = Math.floor(250 * (1 - t) + 220 * t);
+                const b = Math.floor(240 * (1 - t) + 255 * t);
 
-            setVignetteColor(`rgba(${r}, ${g}, ${b}, ${0.3 + 0.2 * Math.sin(frameCount.current * 0.02)})`);
+                setVignetteColor(`rgba(${r}, ${g}, ${b}, ${0.3 + 0.2 * Math.sin(frameCount.current * 0.1)})`);
+                lastTime = now;
+            }
             animationId = requestAnimationFrame(animate);
         };
 
@@ -104,8 +108,6 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
 
     return (
         <Group
-            x={shapeProps.x}
-            y={shapeProps.y}
             width={shapeProps.width}
             height={shapeProps.height}
             onClick={handleCapture}
