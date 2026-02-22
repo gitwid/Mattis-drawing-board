@@ -145,7 +145,7 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
                 strokeWidth={2}
                 shadowBlur={shapeProps.isCaptured ? 0 : 20}
                 shadowColor={vignetteColor}
-                listening={!shapeProps.isCaptured} // Enable hit area while uncaptured
+                listening={true} // Enable hit area perpetually so it can be dragged/selected after capture
             />
         </Group>
     );
@@ -153,7 +153,7 @@ const GlimpseOverlay = ({ shapeProps, isSelected, onChange }) => {
 
 const CapturedFrame = ({ imageUrl, width, height }) => {
     const [img] = useImage(imageUrl);
-    return <Image image={img} width={width} height={height} />;
+    return <Image image={img} width={width} height={height} listening={false} />;
 };
 
 export default GlimpseOverlay;
